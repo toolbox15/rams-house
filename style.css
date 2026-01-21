@@ -1,9 +1,84 @@
-:root { --packers-green: #203731; --packers-gold: #FFB612; }
-body { background-color: var(--packers-green); color: white; font-family: sans-serif; margin: 0; text-align: center; }
-.header { background: var(--packers-gold); color: var(--packers-green); padding: 20px; font-weight: 900; text-transform: uppercase; }
-.container { padding: 20px; max-width: 400px; margin: auto; }
-.countdown { border: 1px solid var(--packers-gold); padding: 10px; border-radius: 8px; margin: 15px 0; }
-.booster-card { background: rgba(255,255,255,0.1); border-radius: 15px; padding: 20px; margin: 20px 0; border-left: 5px solid var(--packers-gold); text-align: left; }
-.price { color: var(--packers-gold); font-size: 1.4rem; font-weight: bold; float: right; }
-.btn { background: var(--packers-gold); color: var(--packers-green); display: block; padding: 15px; border-radius: 10px; text-decoration: none; font-weight: bold; margin-top: 15px; }
-.vcf-btn { background: white; color: var(--packers-green); margin-top: 30px; }
+:root {
+  /* Official LA Rams Colors */
+  --rams-blue: #003594;
+  --rams-gold: #FFD100;
+  --rams-white: #FFFFFF;
+  --nightlife-dark: #050505; /* Deep black for that neon pop */
+}
+
+body {
+  background-color: var(--nightlife-dark);
+  background-image: radial-gradient(circle, var(--rams-blue) 0%, var(--nightlife-dark) 100%);
+  color: var(--rams-white);
+  font-family: 'Arial Black', sans-serif; /* Heavier font for the "Whose House" feel */
+  margin: 0;
+  text-align: center;
+}
+
+.header {
+  background: var(--rams-blue);
+  color: var(--rams-gold);
+  padding: 25px;
+  font-weight: 900;
+  text-transform: uppercase;
+  border-bottom: 4px solid var(--rams-gold);
+  letter-spacing: 2px;
+  text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+}
+
+.container {
+  padding: 20px;
+  max-width: 400px;
+  margin: auto;
+}
+
+.countdown {
+  border: 2px solid var(--rams-gold);
+  padding: 12px;
+  border-radius: 12px;
+  margin: 15px 0;
+  background: rgba(0, 53, 148, 0.3); /* Transparent Rams blue */
+  box-shadow: 0 0 10px var(--rams-gold); /* Gives it a slight "neon" glow */
+}
+
+.booster-card {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 15px;
+  padding: 20px;
+  margin: 20px 0;
+  border-left: 6px solid var(--rams-blue);
+  text-align: left;
+  backdrop-filter: blur(5px); /* Modern glassmorphism look */
+}
+
+.price {
+  color: var(--rams-gold);
+  font-size: 1.5rem;
+  font-weight: bold;
+  float: right;
+  text-shadow: 0 0 5px rgba(255, 209, 0, 0.5);
+}
+
+.btn {
+  background: linear-gradient(135deg, var(--rams-gold) 0%, #e6bc00 100%);
+  color: var(--rams-blue);
+  display: block;
+  padding: 18px;
+  border-radius: 12px;
+  text-decoration: none;
+  font-weight: 900;
+  margin-top: 15px;
+  text-transform: uppercase;
+  transition: transform 0.2s ease;
+}
+
+.btn:active {
+  transform: scale(0.98); /* Tactile feel when clicking */
+}
+
+.vcf-btn {
+  background: var(--rams-white);
+  color: var(--rams-blue);
+  margin-top: 30px;
+  border: 2px solid var(--rams-blue);
+}
