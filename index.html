@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Bears Game Day Scratch-Off</title>
+    <style>
+        body { 
+            background-color: #0B162A; 
+            color: white; 
+            text-align: center; 
+            font-family: 'Arial Black', sans-serif; 
+            margin: 0; 
+            overflow: hidden; 
+            touch-action: none; 
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+        }
+
+        h1 { color: #fff; text-shadow: 2px 2px #C83803; margin-bottom: 5px; font-size: 2.2rem; }
+        .reveal-text { font-size: 18px; margin-bottom: 20px; color: #fff; padding: 0 15px; min-height: 50px; }
+
+        .container { 
+            position: relative; 
+            width: 300px; 
+            height: 300px; 
+            border: 6px solid #C83803; 
+            box-shadow: 0 0 25px rgba(0,0,0,0.7); 
+            border-radius: 10px;
+            background-color: #000;
+        }
+
+        #ig-link {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 1; display: block; pointer-events: none;
+        }
+
+        #prize { width: 100%; height: 100%; background-size: cover; border-radius: 4px; }
+
+        #scratch-canvas { 
+            position: absolute; 
+            top: 0; left: 0; z-index: 2; 
+            cursor: crosshair; touch-action: none; 
+            border-radius: 4px;
+            transition: opacity 0.8s ease; 
+        }
+
+        .hint { color: #C83803; font-weight: bold; text-transform: uppercase; margin-top: 15px; }
+    </style>
+</head>
+<body>
+
+    <h1 id="header">BEAR DOWN</h1>
+    <p class="reveal-text" id="status-text">Rub the helmet to reveal your prize!</p>
+
+    <div class="container" id="game-container">
+        <a id="ig-link" href="#" target="_blank">
+            <div id="prize"></div>
+        </a>
+        <canvas id="scratch-canvas" width="300" height="300"></canvas>
+    </div>
+
+    <p class="hint" id="footer-hint">Must reveal 60% to win</p>
+
+    <script>
+        // --- CONFIGURATION ---
+        const BAR_HANDLE = "theponychicago"; // <--- UPDATE THIS PER BAR
+        const COOLDOWN_HOURS = 2; 
+        
+        const PRIZE_POOL = [
+            { img: './prize1.png', msg: 'FREE%20WINGS' },
+            { img: './prize2.png', msg: '5%20OFF%20DRAFTS' },
+            { img: './prize3.png', msg: 'FREE%20APPETIZER' }
+        ];
+
+        // --- DOM ELEMENTS ---
+        const canvas = document.getElementById('scratch-canvas');
+        const ctx = canvas.getContext('2d', { willReadFrequently: true });
+        const statusText = document.getElementById('status-text');
+        const igLink = document.getElementById('ig-link');
+        const prizeDiv = document.getElementById('prize');
+        
+        let isDrawing = false;
+        let isFinished = false;
+
+        // --- 1. CHECK LOCKOUT ---
+        function checkLockout() {
+            const expiry = localStorage.getItem('bears_scratch_expiry');
+            if (expiry && Date.now() < expiry) {
+                const remaining = Math.ceil((expiry - Date.now()) / (1000 * 60));
+                document.getElementById('game-container').style.display = 'none';
+                document.getElementById('footer-hint').style.display = 'none';
+                statusText.innerHTML = `ENTRY SAVED!<br>Next play available in: ${remaining} mins`;
+                return true;
+            }
+            return false;
+        }
+
+        // --- 2. INITIALIZE GAME ---
+        if (!checkLockout()) {
+            const picked = PRIZE_POOL[Math.floor(Math.random() * PRIZE_POOL.length)];
+            prizeDiv.style.backgroundImage = `url(${picked.img})`;
+            igLink.href = `https://ig.me/m/${BAR_HANDLE}?text=I%20WON%20${picked.msg}!`;
+
+            const coverImg = new Image();
+            coverImg.src = './cover.png'; 
+            coverImg.onload = () => ctx.drawImage(coverImg, 0, 0, 300, 300);
+            
+            // Fallback
+            ctx.fillStyle = '#0B162A';
+            ctx.fillRect(0, 0, 300, 300);
+        }
+
+        // --- 3. SCRATCH LOGIC ---
+        function checkProgress() {
+            if (isFinished) return;
+            const pixels = ctx.getImageData(0, 0, 300, 300).data;
+            let clear = 0;
+            for (let i = 3; i < pixels.length; i += 4) { if (pixels[i] === 0) clear++; }
+            if ((clear / (300 * 300)) > 0.6) handleWin();
+        }
+
+        function handleWin() {
+            isFinished = true;
+            canvas.style.opacity = '0';
+            canvas.style.pointerEvents = 'none';
+            igLink.style.pointerEvents = 'auto';
+            
+            statusText.innerHTML = "WINNER! <br> Tap the helmet to claim on Instagram!";
+            statusText.style.color = "#FF6600";
+            document.getElementById('header').innerText = "TOUCHDOWN!";
+
+            // Set Lockout
+            const cooldown = COOLDOWN_HOURS * 60 * 60 * 1000;
+            localStorage.setItem('bears_scratch_expiry', Date.now() + cooldown);
+        }
+
+        function scratch(x, y) {
+            ctx.globalCompositeOperation = 'destination-out';
+            ctx.beginPath(); ctx.arc(x, y, 18, 0, Math.PI * 2); ctx.fill();
+            checkProgress();
+        }
+
+        // Events
+        canvas.addEventListener('touchstart', (e) => {
+            isDrawing = true;
+            const r = canvas.getBoundingClientRect();
+            scratch(e.touches[0].clientX - r.left, e.touches[0].clientY - r.top);
+        });
+        canvas.addEventListener('touchmove', (e) => {
+            if (!isDrawing || isFinished) return;
+            e.preventDefault();
+            const r = canvas.getBoundingClientRect();
+            scratch(e.touches[0].clientX - r.left, e.touches[0].clientY - r.top);
+        });
+        canvas.addEventListener('touchend', () => isDrawing = false);
+        canvas.addEventListener('mousedown', () => isDrawing = true);
+        canvas.addEventListener('mousemove', (e) => {
+            if (!isDrawing || isFinished) return;
+            const r = canvas.getBoundingClientRect();
+            scratch(e.clientX - r.left, e.clientY - r.top);
+        });
+        window.addEventListener('mouseup', () => isDrawing = false);
+    </script>
+</body>
+</html>
