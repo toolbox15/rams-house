@@ -1,84 +1,56 @@
 :root {
-  /* Official LA Rams Colors */
+  /* Colors pulled directly from your Rams Champions assets */
   --rams-blue: #003594;
   --rams-gold: #FFD100;
-  --rams-white: #FFFFFF;
-  --nightlife-dark: #050505; /* Deep black for that neon pop */
+  --stadium-glow: #3a7bd5; /* The light blue from the stadium lights */
+  --nightlife-dark: #020b18; /* Dark navy to match the field grass shadow */
 }
 
 body {
-  background-color: var(--nightlife-dark);
-  background-image: radial-gradient(circle, var(--rams-blue) 0%, var(--nightlife-dark) 100%);
-  color: var(--rams-white);
-  font-family: 'Arial Black', sans-serif; /* Heavier font for the "Whose House" feel */
+  /* Using your background.jpg as the main view */
+  background: url('images/background.jpg') no-repeat center center fixed;
+  background-size: cover;
+  color: white;
+  font-family: 'Arial Black', sans-serif;
   margin: 0;
   text-align: center;
 }
 
-.header {
-  background: var(--rams-blue);
-  color: var(--rams-gold);
-  padding: 25px;
-  font-weight: 900;
-  text-transform: uppercase;
-  border-bottom: 4px solid var(--rams-gold);
-  letter-spacing: 2px;
-  text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+/* This container sits behind the gray box in your image */
+.prize-container {
+  width: 580px; 
+  height: 580px;
+  position: absolute;
+  top: 48%; /* Adjusting to hit that gray box perfectly */
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 1;
+  background: #000;
+  border-radius: 10px; /* Matches the slight curve of your frame */
+  overflow: hidden;
 }
 
-.container {
-  padding: 20px;
-  max-width: 400px;
-  margin: auto;
+/* The Animated Neon Prize (Wings/Fries) */
+.prize-wings {
+  width: 100%;
+  height: 100%;
+  background-image: url('images/wings-on.png');
+  background-size: contain;
+  background-position: center;
+  background-repeat: no-repeat;
+  animation: neonElectric 0.15s infinite;
 }
 
-.countdown {
-  border: 2px solid var(--rams-gold);
-  padding: 12px;
-  border-radius: 12px;
-  margin: 15px 0;
-  background: rgba(0, 53, 148, 0.3); /* Transparent Rams blue */
-  box-shadow: 0 0 10px var(--rams-gold); /* Gives it a slight "neon" glow */
-}
-
-.booster-card {
-  background: rgba(255, 255, 255, 0.05);
-  border-radius: 15px;
-  padding: 20px;
-  margin: 20px 0;
-  border-left: 6px solid var(--rams-blue);
-  text-align: left;
-  backdrop-filter: blur(5px); /* Modern glassmorphism look */
-}
-
-.price {
-  color: var(--rams-gold);
-  font-size: 1.5rem;
-  font-weight: bold;
-  float: right;
-  text-shadow: 0 0 5px rgba(255, 209, 0, 0.5);
-}
-
+/* Buttons that match your "CLAIM YOUR PRIZE" gold button */
 .btn {
-  background: linear-gradient(135deg, var(--rams-gold) 0%, #e6bc00 100%);
-  color: var(--rams-blue);
+  background: linear-gradient(to bottom, #f9e19a 0%, #d4a73f 100%);
+  color: #3e2b0e; /* Dark brown/gold text for that metallic look */
   display: block;
   padding: 18px;
   border-radius: 12px;
   text-decoration: none;
   font-weight: 900;
-  margin-top: 15px;
   text-transform: uppercase;
-  transition: transform 0.2s ease;
-}
-
-.btn:active {
-  transform: scale(0.98); /* Tactile feel when clicking */
-}
-
-.vcf-btn {
-  background: var(--rams-white);
-  color: var(--rams-blue);
-  margin-top: 30px;
-  border: 2px solid var(--rams-blue);
+  border: 1px solid #ffffff55;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.4);
 }
