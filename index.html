@@ -5,16 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Rams Champions Edition</title>
     <style>
-        :root {
-            --rams-blue: #003594;
-            --rams-gold: #FFD100;
-        }
-
         body { 
-            /* Looking in the ROOT folder */
-            background: #000 url('./background.jpg') no-repeat center center fixed; 
-            background-size: cover;
+            background-color: #000;
             margin: 0; 
+            padding: 0;
             height: 100vh;
             display: flex;
             align-items: center;
@@ -23,14 +17,29 @@
             touch-action: none; 
         }
 
+        /* This Wrapper ensures the background and scratcher scale together */
+        .game-wrapper {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            max-width: 500px; /* Constrains it to phone-width */
+            max-height: 888px; /* Maintains aspect ratio */
+            background: url('./background.jpg') no-repeat center center;
+            background-size: contain; /* This prevents the image from being "too large" */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* The scratcher container - positioned to hit your gray box */
         .container { 
             position: relative; 
-            width: 580px; 
-            height: 580px; 
-            transform: scale(0.6); /* Adjust this (0.1 to 1.0) to fit your phone screen */
+            width: 280px; /* Reduced base size for better mobile fit */
+            height: 280px;
+            margin-top: 40px; /* Adjust this to move the box up/down to match your stadium */
             background-color: #000;
-            border-radius: 12px;
-            box-shadow: 0 0 50px rgba(0,0,0,0.8);
+            border-radius: 8px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
         }
 
         #ig-link {
@@ -56,21 +65,20 @@
 </head>
 <body>
 
-    <div class="container" id="game-container">
-        <a id="ig-link" href="#" target="_blank">
-            <div id="prize"></div>
-        </a>
-        <canvas id="scratch-canvas" width="580" height="580"></canvas>
+    <div class="game-wrapper">
+        <div class="container" id="game-container">
+            <a id="ig-link" href="#" target="_blank">
+                <div id="prize"></div>
+            </a>
+            <canvas id="scratch-canvas" width="280" height="280"></canvas>
+        </div>
     </div>
 
     <script>
         const BAR_HANDLE = "theponychicago"; 
-        
-        // --- PRIZE CHECK ---
-        // Make sure these filenames match exactly what you uploaded to the root
         const PRIZE_POOL = [
-            { img: './wings_prize.gif', msg: 'FREE%20WINGS' },
-            { img: './jackpot_prize.gif', msg: 'GOLDEN%20RAM' }
+            { img: './wings_on.png', msg: 'FREE%20WINGS' },
+            { img: './sorry.png', msg: 'BETTER%20LUCK%20NEXT%20TIME' }
         ];
 
         const canvas = document.getElementById('scratch-canvas');
@@ -85,39 +93,33 @@
         prizeDiv.style.backgroundImage = `url(${picked.img})`;
         igLink.href = `https://ig.me/m/${BAR_HANDLE}?text=I%20WON%20${picked.msg}!`;
 
-        // --- COVER IMAGE CHECK ---
         const coverImg = new Image();
-        // Updated to use a dash to avoid space issues in the browser
         coverImg.src = './rams-cover.jpg';  
         coverImg.onload = () => {
-            ctx.drawImage(coverImg, 0, 0, 580, 580);
+            ctx.drawImage(coverImg, 0, 0, 280, 280);
         };
 
         function scratch(x, y) {
             ctx.globalCompositeOperation = 'destination-out';
             ctx.beginPath(); 
-            ctx.arc(x, y, 40, 0, Math.PI * 2); 
+            ctx.arc(x, y, 25, 0, Math.PI * 2); 
             ctx.fill();
             
-            const pixels = ctx.getImageData(0, 0, 580, 580).data;
+            const pixels = ctx.getImageData(0, 0, 280, 280).data;
             let clear = 0;
             for (let i = 3; i < pixels.length; i += 4) { if (pixels[i] === 0) clear++; }
-            if ((clear / (580 * 580)) > 0.6 && !isFinished) {
+            if ((clear / (280 * 280)) > 0.6 && !isFinished) {
                 isFinished = true;
                 canvas.style.opacity = '0';
                 igLink.style.pointerEvents = 'auto';
-                alert("Touchdown! Tap the prize to claim!");
             }
         }
 
-        // Logic for Mouse/Touch Scaling
         function getMousePos(e) {
             const r = canvas.getBoundingClientRect();
-            const scaleX = canvas.width / r.width;
-            const scaleY = canvas.height / r.height;
             return {
-                x: ((e.clientX || e.touches[0].clientX) - r.left) * scaleX,
-                y: ((e.clientY || e.touches[0].clientY) - r.top) * scaleY
+                x: (e.clientX || e.touches[0].clientX) - r.left,
+                y: (e.clientY || e.touches[0].clientY) - r.top
             };
         }
 
