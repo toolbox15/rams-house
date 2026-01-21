@@ -3,170 +3,141 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Whose House? Rams House! | Scratch-Off</title>
+    <title>Rams Champions Edition</title>
     <style>
-        body { 
-            /* Using your stadium image as the main background */
-            background: url('./background.jpg') no-repeat center center fixed; 
-            background-size: cover;
-            color: white; 
-            text-align: center; 
-            font-family: 'Arial Black', sans-serif; 
-            margin: 0; 
-            overflow: hidden; 
-            touch-action: none; 
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: 100vh;
+        :root {
+            --rams-blue: #003594;
+            --rams-gold: #FFD100;
         }
 
-        /* Updated to Rams Blue and Gold */
-        h1 { color: #fff; text-shadow: 2px 2px #003594; margin-bottom: 5px; font-size: 2.2rem; }
-        .reveal-text { font-size: 18px; margin-bottom: 20px; color: #fff; padding: 0 15px; min-height: 50px; text-shadow: 1px 1px 5px #000; }
+        body { 
+            /* Looking in the ROOT folder */
+            background: #000 url('./background.jpg') no-repeat center center fixed; 
+            background-size: cover;
+            margin: 0; 
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            touch-action: none; 
+        }
 
         .container { 
             position: relative; 
-            width: 300px; 
-            height: 300px; 
-            border: 6px solid #FFD100; /* Rams Gold Border */
-            box-shadow: 0 0 25px rgba(0,0,0,0.9); 
-            border-radius: 10px;
+            width: 580px; 
+            height: 580px; 
+            transform: scale(0.6); /* Adjust this (0.1 to 1.0) to fit your phone screen */
             background-color: #000;
+            border-radius: 12px;
+            box-shadow: 0 0 50px rgba(0,0,0,0.8);
         }
 
         #ig-link {
             position: absolute;
             top: 0; left: 0; width: 100%; height: 100%;
-            z-index: 1; display: block; pointer-events: none;
+            z-index: 1; pointer-events: none;
         }
 
-        /* This is where your flickering GIFs (wings/fries) will show */
-        #prize { width: 100%; height: 100%; background-size: contain; background-repeat: no-repeat; background-position: center; border-radius: 4px; }
+        #prize { 
+            width: 100%; height: 100%; 
+            background-size: contain; 
+            background-repeat: no-repeat; 
+            background-position: center; 
+        }
 
         #scratch-canvas { 
             position: absolute; 
             top: 0; left: 0; z-index: 2; 
-            cursor: crosshair; touch-action: none; 
-            border-radius: 4px;
+            cursor: crosshair;
             transition: opacity 0.8s ease; 
         }
-
-        .hint { color: #FFD100; font-weight: bold; text-transform: uppercase; margin-top: 15px; text-shadow: 1px 1px 3px #000; }
     </style>
 </head>
 <body>
-
-    <h1 id="header">RAMS HOUSE</h1>
-    <p class="reveal-text" id="status-text">Rub the helmet to reveal your prize!</p>
 
     <div class="container" id="game-container">
         <a id="ig-link" href="#" target="_blank">
             <div id="prize"></div>
         </a>
-        <canvas id="scratch-canvas" width="300" height="300"></canvas>
+        <canvas id="scratch-canvas" width="580" height="580"></canvas>
     </div>
 
-    <p class="hint" id="footer-hint">Must reveal 60% to win</p>
-
     <script>
-        // --- CONFIGURATION ---
-        const BAR_HANDLE = "rams_bar_la"; // <--- UPDATE THIS TO THE LA BAR'S INSTAGRAM
-        const COOLDOWN_HOURS = 2; 
+        const BAR_HANDLE = "theponychicago"; 
         
-        // --- PRIZE POOL (Update to your flickering GIF filenames) ---
+        // --- PRIZE CHECK ---
+        // Make sure these filenames match exactly what you uploaded to the root
         const PRIZE_POOL = [
             { img: './wings_prize.gif', msg: 'FREE%20WINGS' },
-            { img: './jackpot_prize.gif', msg: 'GOLDEN%20RAM%20JACKPOT' }
+            { img: './jackpot_prize.gif', msg: 'GOLDEN%20RAM' }
         ];
 
         const canvas = document.getElementById('scratch-canvas');
-        const ctx = canvas.getContext('2d', { willReadFrequently: true });
-        const statusText = document.getElementById('status-text');
-        const igLink = document.getElementById('ig-link');
+        const ctx = canvas.getContext('2d');
         const prizeDiv = document.getElementById('prize');
+        const igLink = document.getElementById('ig-link');
         
         let isDrawing = false;
         let isFinished = false;
 
-        // --- 1. CHECK LOCKOUT ---
-        function checkLockout() {
-            const expiry = localStorage.getItem('rams_scratch_expiry'); // Unique key for Rams
-            if (expiry && Date.now() < expiry) {
-                const remaining = Math.ceil((expiry - Date.now()) / (1000 * 60));
-                document.getElementById('game-container').style.display = 'none';
-                document.getElementById('footer-hint').style.display = 'none';
-                statusText.innerHTML = `ENTRY SAVED!<br>Next play available in: ${remaining} mins`;
-                return true;
-            }
-            return false;
-        }
+        const picked = PRIZE_POOL[Math.floor(Math.random() * PRIZE_POOL.length)];
+        prizeDiv.style.backgroundImage = `url(${picked.img})`;
+        igLink.href = `https://ig.me/m/${BAR_HANDLE}?text=I%20WON%20${picked.msg}!`;
 
-        // --- 2. INITIALIZE GAME ---
-        if (!checkLockout()) {
-            const picked = PRIZE_POOL[Math.floor(Math.random() * PRIZE_POOL.length)];
-            prizeDiv.style.backgroundImage = `url(${picked.img})`;
-            igLink.href = `https://ig.me/m/${BAR_HANDLE}?text=I%20WON%20${picked.msg}!`;
-
-            const coverImg = new Image();
-            // --- UPDATED FILENAME ---
-            coverImg.src = './rams cover.jpg';  
-            coverImg.onload = () => ctx.drawImage(coverImg, 0, 0, 300, 300);
-            
-            ctx.fillStyle = '#003594'; // Fallback Rams Blue
-            ctx.fillRect(0, 0, 300, 300);
-        }
-
-        // --- 3. SCRATCH LOGIC ---
-        function checkProgress() {
-            if (isFinished) return;
-            const pixels = ctx.getImageData(0, 0, 300, 300).data;
-            let clear = 0;
-            for (let i = 3; i < pixels.length; i += 4) { if (pixels[i] === 0) clear++; }
-            if ((clear / (300 * 300)) > 0.6) handleWin();
-        }
-
-        function handleWin() {
-            isFinished = true;
-            canvas.style.opacity = '0';
-            canvas.style.pointerEvents = 'none';
-            igLink.style.pointerEvents = 'auto';
-            
-            statusText.innerHTML = "WINNER! <br> Tap the prize to claim on Instagram!";
-            statusText.style.color = "#FFD100";
-            document.getElementById('header').innerText = "TOUCHDOWN!";
-
-            const cooldown = COOLDOWN_HOURS * 60 * 60 * 1000;
-            localStorage.setItem('rams_scratch_expiry', Date.now() + cooldown);
-        }
+        // --- COVER IMAGE CHECK ---
+        const coverImg = new Image();
+        // Updated to use a dash to avoid space issues in the browser
+        coverImg.src = './rams-cover.jpg';  
+        coverImg.onload = () => {
+            ctx.drawImage(coverImg, 0, 0, 580, 580);
+        };
 
         function scratch(x, y) {
             ctx.globalCompositeOperation = 'destination-out';
-            ctx.beginPath(); ctx.arc(x, y, 22, 0, Math.PI * 2); ctx.fill(); // Slightly larger brush for better mobile feel
-            checkProgress();
+            ctx.beginPath(); 
+            ctx.arc(x, y, 40, 0, Math.PI * 2); 
+            ctx.fill();
+            
+            const pixels = ctx.getImageData(0, 0, 580, 580).data;
+            let clear = 0;
+            for (let i = 3; i < pixels.length; i += 4) { if (pixels[i] === 0) clear++; }
+            if ((clear / (580 * 580)) > 0.6 && !isFinished) {
+                isFinished = true;
+                canvas.style.opacity = '0';
+                igLink.style.pointerEvents = 'auto';
+                alert("Touchdown! Tap the prize to claim!");
+            }
         }
 
-        // Event Listeners
-        canvas.addEventListener('touchstart', (e) => {
-            isDrawing = true;
+        // Logic for Mouse/Touch Scaling
+        function getMousePos(e) {
             const r = canvas.getBoundingClientRect();
-            scratch(e.touches[0].clientX - r.left, e.touches[0].clientY - r.top);
-        });
-        canvas.addEventListener('touchmove', (e) => {
-            if (!isDrawing || isFinished) return;
-            e.preventDefault();
-            const r = canvas.getBoundingClientRect();
-            scratch(e.touches[0].clientX - r.left, e.touches[0].clientY - r.top);
-        });
-        canvas.addEventListener('touchend', () => isDrawing = false);
-        canvas.addEventListener('mousedown', () => isDrawing = true);
+            const scaleX = canvas.width / r.width;
+            const scaleY = canvas.height / r.height;
+            return {
+                x: ((e.clientX || e.touches[0].clientX) - r.left) * scaleX,
+                y: ((e.clientY || e.touches[0].clientY) - r.top) * scaleY
+            };
+        }
+
         canvas.addEventListener('mousemove', (e) => {
             if (!isDrawing || isFinished) return;
-            const r = canvas.getBoundingClientRect();
-            scratch(e.clientX - r.left, e.clientY - r.top);
+            const pos = getMousePos(e);
+            scratch(pos.x, pos.y);
         });
+
+        canvas.addEventListener('touchmove', (e) => {
+            if (isFinished) return;
+            e.preventDefault();
+            const pos = getMousePos(e);
+            scratch(pos.x, pos.y);
+        }, { passive: false });
+
+        canvas.addEventListener('mousedown', () => isDrawing = true);
         window.addEventListener('mouseup', () => isDrawing = false);
+        canvas.addEventListener('touchstart', () => isDrawing = true);
+        canvas.addEventListener('touchend', () => isDrawing = false);
     </script>
 </body>
 </html>
