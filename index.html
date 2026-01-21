@@ -3,10 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Bears Game Day Scratch-Off</title>
+    <title>Whose House? Rams House! | Scratch-Off</title>
     <style>
         body { 
-            background-color: #0B162A; 
+            /* Using your stadium image as the main background */
+            background: url('./background.jpg') no-repeat center center fixed; 
+            background-size: cover;
             color: white; 
             text-align: center; 
             font-family: 'Arial Black', sans-serif; 
@@ -20,15 +22,16 @@
             height: 100vh;
         }
 
-        h1 { color: #fff; text-shadow: 2px 2px #C83803; margin-bottom: 5px; font-size: 2.2rem; }
-        .reveal-text { font-size: 18px; margin-bottom: 20px; color: #fff; padding: 0 15px; min-height: 50px; }
+        /* Updated to Rams Blue and Gold */
+        h1 { color: #fff; text-shadow: 2px 2px #003594; margin-bottom: 5px; font-size: 2.2rem; }
+        .reveal-text { font-size: 18px; margin-bottom: 20px; color: #fff; padding: 0 15px; min-height: 50px; text-shadow: 1px 1px 5px #000; }
 
         .container { 
             position: relative; 
             width: 300px; 
             height: 300px; 
-            border: 6px solid #C83803; 
-            box-shadow: 0 0 25px rgba(0,0,0,0.7); 
+            border: 6px solid #FFD100; /* Rams Gold Border */
+            box-shadow: 0 0 25px rgba(0,0,0,0.9); 
             border-radius: 10px;
             background-color: #000;
         }
@@ -39,7 +42,8 @@
             z-index: 1; display: block; pointer-events: none;
         }
 
-        #prize { width: 100%; height: 100%; background-size: cover; border-radius: 4px; }
+        /* This is where your flickering GIFs (wings/fries) will show */
+        #prize { width: 100%; height: 100%; background-size: contain; background-repeat: no-repeat; background-position: center; border-radius: 4px; }
 
         #scratch-canvas { 
             position: absolute; 
@@ -49,12 +53,12 @@
             transition: opacity 0.8s ease; 
         }
 
-        .hint { color: #C83803; font-weight: bold; text-transform: uppercase; margin-top: 15px; }
+        .hint { color: #FFD100; font-weight: bold; text-transform: uppercase; margin-top: 15px; text-shadow: 1px 1px 3px #000; }
     </style>
 </head>
 <body>
 
-    <h1 id="header">BEAR DOWN</h1>
+    <h1 id="header">RAMS HOUSE</h1>
     <p class="reveal-text" id="status-text">Rub the helmet to reveal your prize!</p>
 
     <div class="container" id="game-container">
@@ -68,16 +72,15 @@
 
     <script>
         // --- CONFIGURATION ---
-        const BAR_HANDLE = "theponychicago"; // <--- UPDATE THIS PER BAR
+        const BAR_HANDLE = "rams_bar_la"; // <--- UPDATE THIS TO THE LA BAR'S INSTAGRAM
         const COOLDOWN_HOURS = 2; 
         
+        // --- PRIZE POOL (Update to your flickering GIF filenames) ---
         const PRIZE_POOL = [
-            { img: './prize1.png', msg: 'FREE%20WINGS' },
-            { img: './prize2.png', msg: '5%20OFF%20DRAFTS' },
-            { img: './prize3.png', msg: 'FREE%20APPETIZER' }
+            { img: './wings_prize.gif', msg: 'FREE%20WINGS' },
+            { img: './jackpot_prize.gif', msg: 'GOLDEN%20RAM%20JACKPOT' }
         ];
 
-        // --- DOM ELEMENTS ---
         const canvas = document.getElementById('scratch-canvas');
         const ctx = canvas.getContext('2d', { willReadFrequently: true });
         const statusText = document.getElementById('status-text');
@@ -89,7 +92,7 @@
 
         // --- 1. CHECK LOCKOUT ---
         function checkLockout() {
-            const expiry = localStorage.getItem('bears_scratch_expiry');
+            const expiry = localStorage.getItem('rams_scratch_expiry'); // Unique key for Rams
             if (expiry && Date.now() < expiry) {
                 const remaining = Math.ceil((expiry - Date.now()) / (1000 * 60));
                 document.getElementById('game-container').style.display = 'none';
@@ -107,11 +110,11 @@
             igLink.href = `https://ig.me/m/${BAR_HANDLE}?text=I%20WON%20${picked.msg}!`;
 
             const coverImg = new Image();
-            coverImg.src = './cover.png'; 
+            // --- UPDATED FILENAME ---
+            coverImg.src = './rams cover.jpg';  
             coverImg.onload = () => ctx.drawImage(coverImg, 0, 0, 300, 300);
             
-            // Fallback
-            ctx.fillStyle = '#0B162A';
+            ctx.fillStyle = '#003594'; // Fallback Rams Blue
             ctx.fillRect(0, 0, 300, 300);
         }
 
@@ -130,22 +133,21 @@
             canvas.style.pointerEvents = 'none';
             igLink.style.pointerEvents = 'auto';
             
-            statusText.innerHTML = "WINNER! <br> Tap the helmet to claim on Instagram!";
-            statusText.style.color = "#FF6600";
+            statusText.innerHTML = "WINNER! <br> Tap the prize to claim on Instagram!";
+            statusText.style.color = "#FFD100";
             document.getElementById('header').innerText = "TOUCHDOWN!";
 
-            // Set Lockout
             const cooldown = COOLDOWN_HOURS * 60 * 60 * 1000;
-            localStorage.setItem('bears_scratch_expiry', Date.now() + cooldown);
+            localStorage.setItem('rams_scratch_expiry', Date.now() + cooldown);
         }
 
         function scratch(x, y) {
             ctx.globalCompositeOperation = 'destination-out';
-            ctx.beginPath(); ctx.arc(x, y, 18, 0, Math.PI * 2); ctx.fill();
+            ctx.beginPath(); ctx.arc(x, y, 22, 0, Math.PI * 2); ctx.fill(); // Slightly larger brush for better mobile feel
             checkProgress();
         }
 
-        // Events
+        // Event Listeners
         canvas.addEventListener('touchstart', (e) => {
             isDrawing = true;
             const r = canvas.getBoundingClientRect();
