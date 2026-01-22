@@ -12,12 +12,12 @@
             overflow: hidden; touch-action: none;
         }
 
-        /* 1. Perspective Fix: Forced 9:16 aspect ratio for mobile */
+        /* 1. Perspective Fix: Standard Mobile Aspect Ratio */
         .game-card {
             position: relative;
             width: 100vw;
-            height: 177.7vw; /* Height is exactly 16/9 of the width */
-            max-width: 430px; /* Max width of an iPhone Pro Max */
+            height: 177.7vw; 
+            max-width: 430px; 
             max-height: 764px;
             background: url('./background.jpg') no-repeat center center;
             background-size: cover;
@@ -25,15 +25,29 @@
             justify-content: center;
         }
 
-        /* 2. Alignment Fix: Adjusted margin to drop the scratcher into the gold box */
         .scratch-container { 
             position: relative; 
             width: 78%; 
             aspect-ratio: 1 / 1;
             margin-top: 55%; 
-            background-color: #000;
+            background-color: #050505;
             border-radius: 5px;
-            box-shadow: 0 0 15px rgba(0,0,0,0.5);
+            overflow: hidden;
+        }
+
+        /* 2. Neon Flicker Animation */
+        @keyframes neonPowerOn {
+            0% { opacity: 0.1; filter: brightness(1); }
+            10% { opacity: 1; filter: brightness(2) drop-shadow(0 0 5px #FFD100); }
+            15% { opacity: 0.3; }
+            20% { opacity: 1; filter: brightness(2) drop-shadow(0 0 10px #FFD100); }
+            25% { opacity: 0.2; }
+            30% { opacity: 1; filter: brightness(1.5) drop-shadow(0 0 20px #FFD100); }
+            100% { opacity: 1; filter: brightness(1.2) drop-shadow(0 0 15px #FFD100); }
+        }
+
+        .prize-glow {
+            animation: neonPowerOn 0.6s ease-out forwards;
         }
 
         #prize { 
@@ -42,6 +56,7 @@
             background-size: contain; 
             background-repeat: no-repeat; 
             background-position: center; 
+            opacity: 0; /* Hidden until reveal */
         }
 
         #scratch-canvas { 
@@ -64,6 +79,7 @@
     <script>
         const canvas = document.getElementById('scratch-canvas');
         const ctx = canvas.getContext('2d');
+        const prizeDiv = document.getElementById('prize');
         const igLink = document.getElementById('ig-link');
 
         let isDrawing = false;
@@ -83,12 +99,12 @@
 
         window.onload = init;
 
-        // 3. WIDE BRUSH LOGIC
+        // 3. Wide Brush Logic
         function scratch(x, y) {
             ctx.globalCompositeOperation = 'destination-out';
             ctx.lineJoin = 'round';
             ctx.lineCap = 'round';
-            ctx.lineWidth = 55; // This creates the "Wide Paint Brush" effect
+            ctx.lineWidth = 55; // Wide Scraping Brush
 
             ctx.beginPath();
             if (lastPoint) {
@@ -108,12 +124,18 @@
             const pixels = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
             let clear = 0;
             for (let i = 3; i < pixels.length; i += 4) { if (pixels[i] === 0) clear++; }
-            if ((clear / (canvas.width * canvas.height)) > 0.6) {
+            
+            if ((clear / (canvas.width * canvas.height)) > 0.5) {
+                // Reveal Prize with Animation
                 canvas.style.opacity = '0';
+                canvas.style.pointerEvents = 'none';
+                prizeDiv.style.opacity = '1';
+                prizeDiv.classList.add('prize-glow');
                 igLink.style.pointerEvents = 'auto';
             }
         }
 
+        // Input Handlers
         function handleStart(e) {
             isDrawing = true;
             const r = canvas.getBoundingClientRect();
@@ -133,10 +155,8 @@
 
         canvas.addEventListener('mousedown', handleStart);
         canvas.addEventListener('touchstart', (e) => { handleStart(e); handleMove(e); });
-        
         window.addEventListener('mousemove', handleMove);
         window.addEventListener('touchmove', handleMove, { passive: false });
-        
         window.addEventListener('mouseup', () => { isDrawing = false; lastPoint = null; });
         window.addEventListener('touchend', () => { isDrawing = false; lastPoint = null; });
 
