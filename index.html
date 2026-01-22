@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Rams Game Day</title>
+    <title>Rams Game Day Rewards</title>
     <style>
         body, html {
             margin: 0; padding: 0; width: 100%; height: 100%;
@@ -12,16 +12,17 @@
             overflow: hidden; touch-action: none;
         }
 
+        /* Perspective Fix: 9:16 Mobile Viewport */
         .game-wrapper {
             position: relative;
             width: 100vw;
-            height: 177.7vw; /* Perfect 9:16 mobile ratio */
+            height: 177.7vw; 
             max-width: 430px; 
             max-height: 764px;
             overflow: hidden;
         }
 
-        /* Bottom layer: The Stadium Background + The Prize */
+        /* Bottom Layer: Stadium & Prize */
         #prize-layer { 
             position: absolute;
             top: 0; left: 0;
@@ -35,13 +36,22 @@
         }
 
         .prize-image {
-            width: 75%;
+            width: 70%;
             opacity: 0;
-            filter: drop-shadow(0 0 10px #FFD100);
             transition: opacity 0.5s ease-in;
         }
 
-        /* Top layer: The Scratchable Cover */
+        /* Neon Power-On Flicker */
+        @keyframes neonFlicker {
+            0% { opacity: 0.1; filter: brightness(1); }
+            10% { opacity: 1; filter: brightness(2) drop-shadow(0 0 10px #FFD100); }
+            20% { opacity: 0.3; }
+            40% { opacity: 1; filter: brightness(1.5) drop-shadow(0 0 20px #FFD100); }
+            100% { opacity: 1; filter: brightness(1.2) drop-shadow(0 0 15px #FFD100); }
+        }
+        .reveal-active { opacity: 1 !important; animation: neonFlicker 0.8s ease-out forwards; }
+
+        /* Top Layer: Scratch Canvas */
         #scratch-canvas { 
             position: absolute;
             top: 0; left: 0;
@@ -49,13 +59,6 @@
             z-index: 2;
             touch-action: none;
         }
-
-        /* Neon Reveal Animation */
-        @keyframes neonFlicker {
-            0% { filter: brightness(1) drop-shadow(0 0 5px #FFD100); }
-            100% { filter: brightness(1.3) drop-shadow(0 0 25px #FFD100); }
-        }
-        .reveal-active { opacity: 1 !important; animation: neonFlicker 0.1s infinite alternate; }
     </style>
 </head>
 <body>
@@ -80,25 +83,30 @@
             canvas.height = canvas.offsetHeight;
             
             const coverImg = new Image();
+            // IMPORTANT: Make sure this file is named exactly like this on GitHub
             coverImg.src = './rams-cover.jpg'; 
+            
             coverImg.onload = () => {
                 ctx.drawImage(coverImg, 0, 0, canvas.width, canvas.height);
             };
+
+            coverImg.onerror = () => {
+                console.error("Missing rams-cover.jpg");
+                ctx.fillStyle = "#1a1a1a"; // Dark fallback if image fails
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+            };
         }
 
-        window.onload = init;
+        // Initialize on load
+        window.addEventListener('load', init);
 
         function scratch(x, y) {
             ctx.globalCompositeOperation = 'destination-out';
             
-            // --- WIDE PAINT BRUSH EFFECT ---
-            ctx.lineWidth = 80; // Extra wide for the scraping look
-            ctx.lineCap = 'butt'; // Square ends make it look more like a flat scraper
-            ctx.lineJoin = 'bevel';
-            
-            // Add a slight "grain" effect to the brush
-            ctx.shadowBlur = 5;
-            ctx.shadowColor = 'black';
+            // WIDE PAINT BRUSH EFFECT
+            ctx.lineWidth = 75; 
+            ctx.lineCap = 'butt'; // Square edge for "scraping" look
+            ctx.lineJoin = 'round';
 
             ctx.beginPath();
             if (lastPoint) {
@@ -106,7 +114,6 @@
                 ctx.lineTo(x, y);
             } else {
                 ctx.moveTo(x, y);
-                ctx.lineTo(x, y);
             }
             ctx.stroke();
             lastPoint = { x, y };
@@ -117,18 +124,18 @@
         function checkReveal() {
             const pixels = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
             let clear = 0;
-            // Sampling pixels for performance
-            for (let i = 3; i < pixels.length; i += 16) { if (pixels[i] === 0) clear++; }
+            for (let i = 3; i < pixels.length; i += 32) { // Optimized sampling
+                if (pixels[i] === 0) clear++;
+            }
             
-            // Reveal once 40% of the screen area is cleared
-            if ((clear / (pixels.length / 16)) > 0.4) {
+            if ((clear / (pixels.length / 32)) > 0.4) {
                 prizeImg.classList.add('reveal-active');
                 canvas.style.opacity = '0';
                 canvas.style.pointerEvents = 'none';
             }
         }
 
-        // Handle Touch & Mouse
+        // Input Handling
         function handleStart(e) {
             isDrawing = true;
             const r = canvas.getBoundingClientRect();
