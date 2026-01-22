@@ -24,11 +24,11 @@
             justify-content: center;
         }
 
-        /* 1. MOVED DOWN: Nudged from 48% to 49.5% to shift the whole unit down */
+        /* 1. MOVED DOWN: Adjusted margin-top to 51% for the 10px shift */
         .scratch-outer-wrap {
             position: relative;
             width: 70%;
-            margin-top: 49.5%; 
+            margin-top: 51%; 
             z-index: 20;
             filter: drop-shadow(0 20px 25px rgba(0,0,0,0.9));
         }
@@ -73,7 +73,6 @@
             z-index: 2; 
             width: 100%;
             touch-action: none;
-            /* 2. REMOVED TRANSVERSE LIFT: Setting to 0 to keep border and cover aligned */
             transform: translateY(0);
         }
     </style>
