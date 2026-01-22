@@ -24,12 +24,22 @@
             justify-content: center;
         }
 
+        /* 1. Z-AXIS LIFT & WHITE BORDER */
         .scratch-box { 
             position: relative; 
             width: 68%; 
             aspect-ratio: 1 / 1;
             margin-top: 55%; 
-            background-color: transparent; /* No black box background to keep it seamless */
+            background-color: transparent;
+            
+            /* The 2-pixel white border */
+            border: 2px solid #ffffff; 
+            border-radius: 4px;
+            
+            /* Simulating Z-Axis movement (20px lift) with a shadow */
+            z-index: 20; 
+            filter: drop-shadow(0 20px 25px rgba(0,0,0,0.9));
+            
             overflow: hidden;
         }
 
@@ -86,7 +96,6 @@
             coverImg.src = './rams-cover.png'; 
             
             coverImg.onload = () => {
-                // --- PROPORTIONAL SCALING LOGIC ---
                 const imgRatio = coverImg.width / coverImg.height;
                 const canvasRatio = canvas.width / canvas.height;
                 let drawWidth, drawHeight, xOffset, yOffset;
@@ -102,7 +111,6 @@
                 xOffset = (canvas.width - drawWidth) / 2;
                 yOffset = (canvas.height - drawHeight) / 2;
 
-                // Clear and Draw the PNG in the center with its original ratio
                 ctx.clearRect(0, 0, canvas.width, canvas.height);
                 ctx.drawImage(coverImg, xOffset, yOffset, drawWidth, drawHeight);
             };
