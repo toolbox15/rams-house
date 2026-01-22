@@ -28,21 +28,21 @@
             position: relative;
             width: 70%;
             margin-top: 56%; 
-            z-index: 20;
+            z-index: 100; /* Extremely high to stay above stadium */
             filter: drop-shadow(0 20px 25px rgba(0,0,0,0.9));
         }
 
         .scratch-box { 
             position: relative; 
             width: 100%;
-            background-color: #050505;
+            background-color: #000;
             border: 4px solid #ffffff; 
             border-radius: 6px;
             overflow: hidden;
             box-sizing: border-box; 
         }
 
-        /* 1. LAYER FIX: Wings must stay at Z-INDEX 1 */
+        /* 1. WINGS: Stuck in the back */
         #prize-container {
             position: absolute;
             top: 0; left: 0;
@@ -62,38 +62,25 @@
             background-position: center;
         }
 
-        #prize-on { 
-            background-image: url('./wings_on.gif'); 
-            opacity: 1; /* Always on, but behind the cover */
-        }
-        
-        #prize-flicker { 
-            background-image: url('./wings_flicker.gif'); 
-            opacity: 0; /* Only turns on during the win animation */
-        }
+        #prize-on { background-image: url('./wings_on.gif'); opacity: 1; }
+        #prize-flicker { background-image: url('./wings_flicker.gif'); opacity: 0; }
 
-        /* 2. WIN ANIMATION LOGIC */
+        .revealed #prize-on { filter: drop-shadow(0 0 15px #FFD100); }
+        .revealed #prize-flicker { animation: toggleFlicker 4s infinite; }
+
         @keyframes toggleFlicker {
             0%, 90%, 100% { opacity: 0; }
             92%, 96% { opacity: 1; }
         }
 
-        .revealed #prize-on { 
-            filter: drop-shadow(0 0 15px #FFD100);
-        }
-        
-        .revealed #prize-flicker { 
-            animation: toggleFlicker 4s infinite;
-        }
-
-        /* 3. COVER FIX: Canvas MUST be Z-INDEX 2 to hide the wings */
+        /* 2. COVER: Explicitly set to Z-INDEX 10 to stay in front */
         #scratch-canvas { 
             position: relative;
-            z-index: 2; 
+            z-index: 10; 
             width: 100%;
             display: block;
             touch-action: none;
-            transition: opacity 0.5s ease;
+            background-color: #222; /* If this shows up gray, the image didn't load */
         }
     </style>
 </head>
@@ -102,7 +89,7 @@
     <div class="game-wrapper">
         <div class="scratch-outer-wrap" id="main-wrap">
             <div class="scratch-box" id="dynamic-box">
-                <a id="ig-link" href="#" target="_blank" style="position:absolute; top:0; left:0; width:100%; height:100%; z-index:3; pointer-events:none;">
+                <a id="ig-link" href="#" target="_blank" style="position:absolute; top:0; left:0; width:100%; height:100%; z-index:50; pointer-events:none;">
                     <div id="prize-container">
                         <div id="prize-on" class="prize-layer"></div>
                         <div id="prize-flicker" class="prize-layer"></div>
@@ -125,7 +112,8 @@
 
         function init() {
             const coverImg = new Image();
-            coverImg.src = './rams-cover.png'; 
+            // Try adding a cache-buster to ensure it reloads from GitHub
+            coverImg.src = './rams-cover.png?v=' + Date.now(); 
             
             coverImg.onload = () => {
                 const imgRatio = coverImg.width / coverImg.height;
@@ -136,10 +124,16 @@
                 canvas.width = boxWidth;
                 canvas.height = targetHeight;
 
-                // Force the cover to draw on top
+                // FORCE source-over before drawing
                 ctx.globalCompositeOperation = 'source-over';
-                ctx.clearRect(0, 0, canvas.width, canvas.height);
                 ctx.drawImage(coverImg, 0, 0, canvas.width, canvas.height);
+            };
+
+            coverImg.onerror = () => {
+                // If it fails, paint the box gold so you know it broke
+                ctx.fillStyle = "#FFD100";
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                console.error("The file rams-cover.png was not found in the root folder.");
             };
         }
 
@@ -166,10 +160,7 @@
         function checkWin() {
             const pixels = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
             let clearCount = 0;
-            for (let i = 3; i < pixels.length; i += 16) { 
-                if (pixels[i] === 0) clearCount++; 
-            }
-            
+            for (let i = 3; i < pixels.length; i += 16) { if (pixels[i] === 0) clearCount++; }
             if ((clearCount / (pixels.length / 16)) > 0.60) {
                 canvas.style.opacity = '0';
                 canvas.style.pointerEvents = 'none';
