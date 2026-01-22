@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Rams Champions Edition</title>
+    <title>Rams Game Day</title>
     <style>
         body, html {
             margin: 0; padding: 0; width: 100%; height: 100%;
@@ -28,59 +28,57 @@
             position: relative;
             width: 70%;
             margin-top: 56%; 
-            z-index: 100; /* Extremely high to stay above stadium */
-            filter: drop-shadow(0 20px 25px rgba(0,0,0,0.9));
+            z-index: 10;
         }
 
         .scratch-box { 
             position: relative; 
             width: 100%;
-            background-color: #000;
+            /* 1. THE FIX: The prize GIF is the literal background of the box */
+            background: #050505 url('./wings_on.gif') no-repeat center center;
+            background-size: contain;
             border: 4px solid #ffffff; 
             border-radius: 6px;
             overflow: hidden;
-            box-sizing: border-box; 
+            box-sizing: border-box;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.8);
         }
 
-        /* 1. WINGS: Stuck in the back */
-        #prize-container {
+        /* The flickering GIF sits on top of the 'On' GIF but starts hidden */
+        #flicker-layer {
             position: absolute;
             top: 0; left: 0;
             width: 100%; height: 100%;
-            z-index: 1; 
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .prize-layer {
-            position: absolute;
-            top: 0; left: 0;
-            width: 100%; height: 100%;
+            background: url('./wings_flicker.gif') no-repeat center center;
             background-size: contain;
-            background-repeat: no-repeat;
-            background-position: center;
+            opacity: 0;
+            z-index: 1;
         }
 
-        #prize-on { background-image: url('./wings_on.gif'); opacity: 1; }
-        #prize-flicker { background-image: url('./wings_flicker.gif'); opacity: 0; }
-
-        .revealed #prize-on { filter: drop-shadow(0 0 15px #FFD100); }
-        .revealed #prize-flicker { animation: toggleFlicker 4s infinite; }
+        .revealed #flicker-layer {
+            animation: toggleFlicker 4s infinite;
+        }
 
         @keyframes toggleFlicker {
             0%, 90%, 100% { opacity: 0; }
             92%, 96% { opacity: 1; }
         }
 
-        /* 2. COVER: Explicitly set to Z-INDEX 10 to stay in front */
         #scratch-canvas { 
             position: relative;
-            z-index: 10; 
+            z-index: 5; /* Stays firmly on top of the GIFs */
             width: 100%;
             display: block;
             touch-action: none;
-            background-color: #222; /* If this shows up gray, the image didn't load */
+        }
+
+        /* The Instagram Link */
+        #ig-link {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            z-index: 20; /* Highest layer for clicking */
+            pointer-events: none;
         }
     </style>
 </head>
@@ -89,12 +87,8 @@
     <div class="game-wrapper">
         <div class="scratch-outer-wrap" id="main-wrap">
             <div class="scratch-box" id="dynamic-box">
-                <a id="ig-link" href="#" target="_blank" style="position:absolute; top:0; left:0; width:100%; height:100%; z-index:50; pointer-events:none;">
-                    <div id="prize-container">
-                        <div id="prize-on" class="prize-layer"></div>
-                        <div id="prize-flicker" class="prize-layer"></div>
-                    </div>
-                </a>
+                <div id="flicker-layer"></div>
+                <a id="ig-link" href="https://ig.me/m/theponychicago?text=I%20WON%20WINGS!%20🐏" target="_blank"></a>
                 <canvas id="scratch-canvas"></canvas>
             </div>
         </div>
@@ -112,8 +106,8 @@
 
         function init() {
             const coverImg = new Image();
-            // Try adding a cache-buster to ensure it reloads from GitHub
-            coverImg.src = './rams-cover.png?v=' + Date.now(); 
+            // Force reload to prevent cache issues
+            coverImg.src = './rams-cover.png?v=' + new Date().getTime(); 
             
             coverImg.onload = () => {
                 const imgRatio = coverImg.width / coverImg.height;
@@ -124,16 +118,13 @@
                 canvas.width = boxWidth;
                 canvas.height = targetHeight;
 
-                // FORCE source-over before drawing
+                // DRAW THE COVER ON TOP
                 ctx.globalCompositeOperation = 'source-over';
                 ctx.drawImage(coverImg, 0, 0, canvas.width, canvas.height);
             };
 
             coverImg.onerror = () => {
-                // If it fails, paint the box gold so you know it broke
-                ctx.fillStyle = "#FFD100";
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
-                console.error("The file rams-cover.png was not found in the root folder.");
+                alert("Missing file: rams-cover.png. Please check your GitHub folder.");
             };
         }
 
@@ -161,11 +152,12 @@
             const pixels = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
             let clearCount = 0;
             for (let i = 3; i < pixels.length; i += 16) { if (pixels[i] === 0) clearCount++; }
+            
             if ((clearCount / (pixels.length / 16)) > 0.60) {
                 canvas.style.opacity = '0';
                 canvas.style.pointerEvents = 'none';
                 wrap.classList.add('revealed');
-                igLink.style.pointerEvents = 'auto';
+                igLink.style.pointerEvents = 'auto'; // Enable the link
             }
         }
 
@@ -178,8 +170,7 @@
 
         canvas.addEventListener('mousedown', (e) => { isDrawing = true; lastPoint = getPos(e); });
         canvas.addEventListener('touchstart', (e) => { 
-            isDrawing = true; 
-            lastPoint = getPos(e); 
+            isDrawing = true; lastPoint = getPos(e); 
             scratch(lastPoint.x, lastPoint.y); 
         });
 
@@ -193,8 +184,6 @@
 
         window.addEventListener('mouseup', () => { isDrawing = false; lastPoint = null; });
         window.addEventListener('touchend', () => { isDrawing = false; lastPoint = null; });
-
-        igLink.href = "https://ig.me/m/theponychicago?text=I%20WON%20WINGS!%20🐏";
     </script>
 </body>
 </html>
