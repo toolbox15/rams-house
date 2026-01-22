@@ -24,23 +24,15 @@
             justify-content: center;
         }
 
-        /* 1. Z-AXIS LIFT & WHITE BORDER */
         .scratch-box { 
             position: relative; 
             width: 68%; 
             aspect-ratio: 1 / 1;
             margin-top: 55%; 
             background-color: transparent;
-            
-            /* The 2-pixel white border */
-            border: 2px solid #ffffff; 
-            border-radius: 4px;
-            
-            /* Simulating Z-Axis movement (20px lift) with a shadow */
             z-index: 20; 
+            /* Shadow for the 20px Z-axis lift effect */
             filter: drop-shadow(0 20px 25px rgba(0,0,0,0.9));
-            
-            overflow: hidden;
         }
 
         #prize { 
@@ -101,17 +93,26 @@
                 let drawWidth, drawHeight, xOffset, yOffset;
 
                 if (imgRatio > canvasRatio) {
-                    drawWidth = canvas.width;
-                    drawHeight = canvas.width / imgRatio;
+                    drawWidth = canvas.width - 4; // Leave room for border
+                    drawHeight = drawWidth / imgRatio;
                 } else {
-                    drawHeight = canvas.height;
-                    drawWidth = canvas.height * imgRatio;
+                    drawHeight = canvas.height - 4; // Leave room for border
+                    drawWidth = drawHeight * imgRatio;
                 }
 
                 xOffset = (canvas.width - drawWidth) / 2;
-                yOffset = (canvas.height - drawHeight) / 2;
+                // Move the cover up by 5 pixels
+                yOffset = ((canvas.height - drawHeight) / 2) - 5; 
 
                 ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                // --- DRAWING THE 2PX WHITE BORDER AROUND THE COVER RATIO ---
+                ctx.strokeStyle = "#ffffff";
+                ctx.lineWidth = 2;
+                // Stroke is drawn centered on the line, so we adjust slightly
+                ctx.strokeRect(xOffset - 1, yOffset - 1, drawWidth + 2, drawHeight + 2);
+
+                // --- DRAWING THE IMAGE ---
                 ctx.drawImage(coverImg, xOffset, yOffset, drawWidth, drawHeight);
             };
         }
