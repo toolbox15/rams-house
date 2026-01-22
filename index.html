@@ -24,31 +24,38 @@
             justify-content: center;
         }
 
-        /* 1. POSITIONED ABOVE BUTTON: The container now handles the permanent border */
-        .scratch-box { 
-            position: relative; 
-            width: 68%; 
-            aspect-ratio: 1 / 1;
-            margin-top: 38%; /* Adjusted to sit higher up above the button */
-            background-color: transparent;
-            z-index: 20; 
-            
-            /* The PERMANENT WHITE BORDER */
-            border: 2px solid #ffffff;
-            box-sizing: border-box;
-            border-radius: 4px;
-
-            /* Z-axis lift shadow */
+        /* 1. POSITIONED HIGH ABOVE BUTTON: margin-top pulled up to 32% */
+        .scratch-outer-wrap {
+            position: relative;
+            width: 70%;
+            margin-top: 32%; /* Significant lift to clear the bottom UI button */
+            z-index: 20;
             filter: drop-shadow(0 20px 25px rgba(0,0,0,0.9));
         }
 
+        /* 2. THE DYNAMIC BORDER: This wraps perfectly around the PNG ratio */
+        .scratch-box { 
+            position: relative; 
+            width: 100%;
+            background-color: transparent;
+            border: 2px solid #ffffff; /* Permanent white border */
+            border-radius: 4px;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
         #prize { 
+            position: absolute;
+            top: 0; left: 0;
             width: 100%; height: 100%; 
             background-image: url('./wings_on.png');
             background-size: contain; 
             background-repeat: no-repeat; 
             background-position: center; 
             opacity: 0;
+            z-index: 1;
         }
 
         .prize-glow {
@@ -62,9 +69,11 @@
         }
 
         #scratch-canvas { 
-            position: absolute; top: 0; left: 0; z-index: 2; 
-            width: 100%; height: 100%; touch-action: none;
-            /* Shifting the drawing up 5px internally to match your request */
+            position: relative;
+            z-index: 2; 
+            width: 100%;
+            touch-action: none;
+            /* 3. ARTWORK LIFT: Shifts the canvas contents up 5px internally */
             transform: translateY(-5px);
         }
     </style>
@@ -72,11 +81,13 @@
 <body>
 
     <div class="game-wrapper">
-        <div class="scratch-box">
-            <a id="ig-link" href="#" target="_blank" style="position:absolute; top:0; left:0; width:100%; height:100%; z-index:1; pointer-events:none;">
-                <div id="prize"></div>
-            </a>
-            <canvas id="scratch-canvas"></canvas>
+        <div class="scratch-outer-wrap">
+            <div class="scratch-box" id="dynamic-box">
+                <a id="ig-link" href="#" target="_blank" style="position:absolute; top:0; left:0; width:100%; height:100%; z-index:3; pointer-events:none;">
+                    <div id="prize"></div>
+                </a>
+                <canvas id="scratch-canvas"></canvas>
+            </div>
         </div>
     </div>
 
@@ -85,35 +96,28 @@
         const ctx = canvas.getContext('2d');
         const prizeDiv = document.getElementById('prize');
         const igLink = document.getElementById('ig-link');
+        const box = document.getElementById('dynamic-box');
 
         let isDrawing = false;
         let lastPoint = null;
 
         function init() {
-            canvas.width = canvas.offsetWidth;
-            canvas.height = canvas.offsetHeight;
-            
             const coverImg = new Image();
             coverImg.src = './rams-cover.png'; 
             
             coverImg.onload = () => {
+                // Calculate aspect ratio to set the box height perfectly
                 const imgRatio = coverImg.width / coverImg.height;
-                const canvasRatio = canvas.width / canvas.height;
-                let drawWidth, drawHeight, xOffset, yOffset;
+                const boxWidth = box.offsetWidth;
+                const targetHeight = boxWidth / imgRatio;
 
-                if (imgRatio > canvasRatio) {
-                    drawWidth = canvas.width; 
-                    drawHeight = drawWidth / imgRatio;
-                } else {
-                    drawHeight = canvas.height; 
-                    drawWidth = drawHeight * imgRatio;
-                }
-
-                xOffset = (canvas.width - drawWidth) / 2;
-                yOffset = (canvas.height - drawHeight) / 2;
+                // Set container and canvas dimensions to match the PNG proportion
+                box.style.height = targetHeight + "px";
+                canvas.width = boxWidth;
+                canvas.height = targetHeight;
 
                 ctx.clearRect(0, 0, canvas.width, canvas.height);
-                ctx.drawImage(coverImg, xOffset, yOffset, drawWidth, drawHeight);
+                ctx.drawImage(coverImg, 0, 0, canvas.width, canvas.height);
             };
         }
 
@@ -149,27 +153,39 @@
             }
         }
 
-        function handleStart(e) {
-            isDrawing = true;
+        function getPos(e) {
             const r = canvas.getBoundingClientRect();
             const clientX = e.touches ? e.touches[0].clientX : e.clientX;
             const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-            lastPoint = { x: clientX - r.left, y: clientY - r.top };
+            return { x: clientX - r.left, y: clientY - r.top };
         }
 
-        function handleMove(e) {
+        canvas.addEventListener('mousedown', (e) => {
+            isDrawing = true;
+            const p = getPos(e);
+            lastPoint = p;
+        });
+
+        canvas.addEventListener('touchstart', (e) => {
+            isDrawing = true;
+            const p = getPos(e);
+            lastPoint = p;
+            scratch(p.x, p.y);
+        });
+
+        window.addEventListener('mousemove', (e) => {
+            if (!isDrawing) return;
+            const p = getPos(e);
+            scratch(p.x, p.y);
+        });
+
+        window.addEventListener('touchmove', (e) => {
             if (!isDrawing) return;
             e.preventDefault();
-            const r = canvas.getBoundingClientRect();
-            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-            scratch(clientX - r.left, clientY - r.top);
-        }
+            const p = getPos(e);
+            scratch(p.x, p.y);
+        }, { passive: false });
 
-        canvas.addEventListener('mousedown', handleStart);
-        canvas.addEventListener('touchstart', (e) => { handleStart(e); handleMove(e); });
-        window.addEventListener('mousemove', handleMove);
-        window.addEventListener('touchmove', handleMove, { passive: false });
         window.addEventListener('mouseup', () => { isDrawing = false; lastPoint = null; });
         window.addEventListener('touchend', () => { isDrawing = false; lastPoint = null; });
 
