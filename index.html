@@ -35,19 +35,19 @@
         .scratch-box { 
             position: relative; 
             width: 100%;
-            background-color: #050505;
+            background-color: #050505; /* Solid dark background for contrast */
             border: 4px solid #ffffff; 
             border-radius: 6px;
             overflow: hidden;
             box-sizing: border-box; 
         }
 
-        /* GIF PRIZE CONTAINER */
+        /* 1. LIVE REVEAL LAYERING: Prize is visible from the start, just behind the canvas */
         #prize-container {
             position: absolute;
             top: 0; left: 0;
             width: 100%; height: 100%;
-            z-index: 1;
+            z-index: 1; /* Sits behind the canvas */
             display: flex;
             align-items: center;
             justify-content: center;
@@ -60,23 +60,24 @@
             background-size: contain;
             background-repeat: no-repeat;
             background-position: center;
-            opacity: 0; /* Hidden until scratch is complete */
-            transition: opacity 0.4s ease;
+            opacity: 1; /* Always visible through the holes */
         }
 
-        /* UPDATED TO GIF EXTENSIONS */
         #prize-on { background-image: url('./wings_on.gif'); }
-        #prize-flicker { background-image: url('./wings_flicker.gif'); }
+        
+        /* Flicker overlay starts invisible and only pulses after the win */
+        #prize-flicker { 
+            background-image: url('./wings_flicker.gif'); 
+            opacity: 0; 
+        }
 
-        /* Triggered after 60% scratch */
+        /* 2. POST-WIN EFFECTS: Only add extra glow and flicker after the win */
         .revealed #prize-on { 
-            opacity: 1; 
             filter: drop-shadow(0 0 15px #FFD100);
         }
         
         .revealed #prize-flicker { 
-            opacity: 1;
-            animation: toggleFlicker 4s infinite; /* Switches to flicker GIF occasionally */
+            animation: toggleFlicker 4s infinite;
         }
 
         @keyframes toggleFlicker {
@@ -86,7 +87,7 @@
 
         #scratch-canvas { 
             position: relative;
-            z-index: 2;
+            z-index: 2; /* Sits on top of the GIFs */
             width: 100%;
             display: block;
             touch-action: none;
@@ -141,6 +142,7 @@
         window.onload = init;
 
         function scratch(x, y) {
+            // This mode turns the "brush" into an eraser
             ctx.globalCompositeOperation = 'destination-out';
             ctx.lineJoin = 'round';
             ctx.lineCap = 'butt'; 
