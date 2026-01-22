@@ -24,7 +24,6 @@
             justify-content: center;
         }
 
-        /* 1. MOVED DOWN: Adjusted margin-top to 56% for the additional 10px shift */
         .scratch-outer-wrap {
             position: relative;
             width: 70%;
@@ -36,54 +35,75 @@
         .scratch-box { 
             position: relative; 
             width: 100%;
-            background-color: transparent;
+            background-color: #050505;
             border: 4px solid #ffffff; 
             border-radius: 6px;
             overflow: hidden;
-            display: flex;
-            align-items: center;
-            justify-content: center;
             box-sizing: border-box; 
         }
 
-        #prize { 
+        /* GIF PRIZE CONTAINER */
+        #prize-container {
             position: absolute;
             top: 0; left: 0;
-            width: 100%; height: 100%; 
-            background-image: url('./wings_on.png');
-            background-size: contain; 
-            background-repeat: no-repeat; 
-            background-position: center; 
-            opacity: 0;
+            width: 100%; height: 100%;
             z-index: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
-        .prize-glow {
-            opacity: 1 !important;
-            animation: neonFlicker 0.8s ease-out forwards;
+        .prize-layer {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+            opacity: 0; /* Hidden until scratch is complete */
+            transition: opacity 0.4s ease;
         }
 
-        @keyframes neonFlicker {
-            0% { filter: brightness(1) drop-shadow(0 0 5px #FFD100); }
-            100% { filter: brightness(1.3) drop-shadow(0 0 20px #FFD100); }
+        /* UPDATED TO GIF EXTENSIONS */
+        #prize-on { background-image: url('./wings_on.gif'); }
+        #prize-flicker { background-image: url('./wings_flicker.gif'); }
+
+        /* Triggered after 60% scratch */
+        .revealed #prize-on { 
+            opacity: 1; 
+            filter: drop-shadow(0 0 15px #FFD100);
+        }
+        
+        .revealed #prize-flicker { 
+            opacity: 1;
+            animation: toggleFlicker 4s infinite; /* Switches to flicker GIF occasionally */
+        }
+
+        @keyframes toggleFlicker {
+            0%, 90%, 100% { opacity: 0; }
+            92%, 96% { opacity: 1; }
         }
 
         #scratch-canvas { 
             position: relative;
-            z-index: 2; 
+            z-index: 2;
             width: 100%;
+            display: block;
             touch-action: none;
-            transform: translateY(0);
+            transition: opacity 0.5s ease;
         }
     </style>
 </head>
 <body>
 
     <div class="game-wrapper">
-        <div class="scratch-outer-wrap">
+        <div class="scratch-outer-wrap" id="main-wrap">
             <div class="scratch-box" id="dynamic-box">
                 <a id="ig-link" href="#" target="_blank" style="position:absolute; top:0; left:0; width:100%; height:100%; z-index:3; pointer-events:none;">
-                    <div id="prize"></div>
+                    <div id="prize-container">
+                        <div id="prize-on" class="prize-layer"></div>
+                        <div id="prize-flicker" class="prize-layer"></div>
+                    </div>
                 </a>
                 <canvas id="scratch-canvas"></canvas>
             </div>
@@ -93,7 +113,7 @@
     <script>
         const canvas = document.getElementById('scratch-canvas');
         const ctx = canvas.getContext('2d');
-        const prizeDiv = document.getElementById('prize');
+        const wrap = document.getElementById('main-wrap');
         const igLink = document.getElementById('ig-link');
         const box = document.getElementById('dynamic-box');
 
@@ -140,12 +160,15 @@
 
         function checkWin() {
             const pixels = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
-            let clear = 0;
-            for (let i = 3; i < pixels.length; i += 16) { if (pixels[i] === 0) clear++; }
-            if ((clear / (pixels.length / 16)) > 0.6) {
+            let clearCount = 0;
+            for (let i = 3; i < pixels.length; i += 16) { 
+                if (pixels[i] === 0) clearCount++; 
+            }
+            
+            if ((clearCount / (pixels.length / 16)) > 0.60) {
                 canvas.style.opacity = '0';
                 canvas.style.pointerEvents = 'none';
-                prizeDiv.classList.add('prize-glow');
+                wrap.classList.add('revealed');
                 igLink.style.pointerEvents = 'auto';
             }
         }
@@ -157,24 +180,14 @@
             return { x: clientX - r.left, y: clientY - r.top };
         }
 
-        canvas.addEventListener('mousedown', (e) => {
-            isDrawing = true;
-            lastPoint = getPos(e);
+        canvas.addEventListener('mousedown', (e) => { isDrawing = true; lastPoint = getPos(e); });
+        canvas.addEventListener('touchstart', (e) => { 
+            isDrawing = true; 
+            lastPoint = getPos(e); 
+            scratch(lastPoint.x, lastPoint.y); 
         });
 
-        canvas.addEventListener('touchstart', (e) => {
-            isDrawing = true;
-            const p = getPos(e);
-            lastPoint = p;
-            scratch(p.x, p.y);
-        });
-
-        window.addEventListener('mousemove', (e) => {
-            if (!isDrawing) return;
-            const p = getPos(e);
-            scratch(p.x, p.y);
-        });
-
+        window.addEventListener('mousemove', (e) => { if (isDrawing) scratch(getPos(e).x, getPos(e).y); });
         window.addEventListener('touchmove', (e) => {
             if (!isDrawing) return;
             e.preventDefault();
