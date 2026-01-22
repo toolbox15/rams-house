@@ -12,7 +12,6 @@
             overflow: hidden; touch-action: none;
         }
 
-        /* The Full Stadium Background (Static) */
         .game-wrapper {
             position: relative;
             width: 100vw;
@@ -25,14 +24,12 @@
             justify-content: center;
         }
 
-        /* THE GOLD BOX: Scaled and positioned for mobile */
         .scratch-box { 
             position: relative; 
             width: 68%; 
             aspect-ratio: 1 / 1;
             margin-top: 55%; 
-            background-color: #050505;
-            border-radius: 4px;
+            background-color: transparent; /* No black box background to keep it seamless */
             overflow: hidden;
         }
 
@@ -86,21 +83,33 @@
             canvas.height = canvas.offsetHeight;
             
             const coverImg = new Image();
-            // --- UPDATED TO PNG ---
             coverImg.src = './rams-cover.png'; 
             
             coverImg.onload = () => {
-                ctx.drawImage(coverImg, 0, 0, canvas.width, canvas.height);
-            };
+                // --- PROPORTIONAL SCALING LOGIC ---
+                const imgRatio = coverImg.width / coverImg.height;
+                const canvasRatio = canvas.width / canvas.height;
+                let drawWidth, drawHeight, xOffset, yOffset;
 
-            coverImg.onerror = () => {
-                console.error("Could not find rams-cover.png on GitHub.");
+                if (imgRatio > canvasRatio) {
+                    drawWidth = canvas.width;
+                    drawHeight = canvas.width / imgRatio;
+                } else {
+                    drawHeight = canvas.height;
+                    drawWidth = canvas.height * imgRatio;
+                }
+
+                xOffset = (canvas.width - drawWidth) / 2;
+                yOffset = (canvas.height - drawHeight) / 2;
+
+                // Clear and Draw the PNG in the center with its original ratio
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                ctx.drawImage(coverImg, xOffset, yOffset, drawWidth, drawHeight);
             };
         }
 
         window.onload = init;
 
-        // SCRAPER BRUSH
         function scratch(x, y) {
             ctx.globalCompositeOperation = 'destination-out';
             ctx.lineJoin = 'round';
@@ -116,7 +125,6 @@
             }
             ctx.stroke();
             lastPoint = { x, y };
-
             checkWin();
         }
 
@@ -124,7 +132,6 @@
             const pixels = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
             let clear = 0;
             for (let i = 3; i < pixels.length; i += 16) { if (pixels[i] === 0) clear++; }
-            
             if ((clear / (pixels.length / 16)) > 0.6) {
                 canvas.style.opacity = '0';
                 canvas.style.pointerEvents = 'none';
