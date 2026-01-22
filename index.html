@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Rams Champions Edition</title>
+    <title>Rams Game Day</title>
     <style>
         body, html {
             margin: 0; padding: 0; width: 100%; height: 100%;
@@ -12,30 +12,36 @@
             overflow: hidden; touch-action: none;
         }
 
-        /* The Card wraps the stadium background art */
+        /* 1. Perspective Fix: Forced 9:16 aspect ratio for mobile */
         .game-card {
             position: relative;
-            width: 95vw;
-            max-width: 400px;
-            aspect-ratio: 1 / 1.77; /* Standard phone aspect ratio */
+            width: 100vw;
+            height: 177.7vw; /* Height is exactly 16/9 of the width */
+            max-width: 430px; /* Max width of an iPhone Pro Max */
+            max-height: 764px;
             background: url('./background.jpg') no-repeat center center;
-            background-size: contain;
-            display: flex; justify-content: center;
+            background-size: cover;
+            display: flex;
+            justify-content: center;
         }
 
-        /* 1. MOVED DOWN: Adjusted margin-top to align scratcher with the gold frame */
+        /* 2. Alignment Fix: Adjusted margin to drop the scratcher into the gold box */
         .scratch-container { 
             position: relative; 
-            width: 76%; 
+            width: 78%; 
             aspect-ratio: 1 / 1;
-            margin-top: 52%; /* Lowered to fit the frame in your artwork */
+            margin-top: 55%; 
             background-color: #000;
-            border-radius: 4px;
+            border-radius: 5px;
+            box-shadow: 0 0 15px rgba(0,0,0,0.5);
         }
 
         #prize { 
             width: 100%; height: 100%; 
-            background-size: contain; background-repeat: no-repeat; background-position: center; 
+            background-image: url('./wings_on.png');
+            background-size: contain; 
+            background-repeat: no-repeat; 
+            background-position: center; 
         }
 
         #scratch-canvas { 
@@ -58,12 +64,11 @@
     <script>
         const canvas = document.getElementById('scratch-canvas');
         const ctx = canvas.getContext('2d');
-        const prizeDiv = document.getElementById('prize');
         const igLink = document.getElementById('ig-link');
 
-        const BAR_HANDLE = "theponychicago"; 
-        
-        // --- 2. FIXED SCRATCH FUNCTIONALITY ---
+        let isDrawing = false;
+        let lastPoint = null;
+
         function init() {
             const rect = canvas.parentNode.getBoundingClientRect();
             canvas.width = rect.width;
@@ -76,19 +81,30 @@
             };
         }
 
-        // Using available images since no jackpot file exists
-        prizeDiv.style.backgroundImage = "url('./wings_on.png')";
-        igLink.href = `https://ig.me/m/${BAR_HANDLE}?text=I%20WON!%20🐏`;
-
         window.onload = init;
 
+        // 3. WIDE BRUSH LOGIC
         function scratch(x, y) {
             ctx.globalCompositeOperation = 'destination-out';
-            ctx.beginPath(); 
-            ctx.arc(x, y, 25, 0, Math.PI * 2); 
-            ctx.fill();
-            
-            // Percentage check
+            ctx.lineJoin = 'round';
+            ctx.lineCap = 'round';
+            ctx.lineWidth = 55; // This creates the "Wide Paint Brush" effect
+
+            ctx.beginPath();
+            if (lastPoint) {
+                ctx.moveTo(lastPoint.x, lastPoint.y);
+                ctx.lineTo(x, y);
+            } else {
+                ctx.moveTo(x, y);
+                ctx.lineTo(x, y);
+            }
+            ctx.stroke();
+            lastPoint = { x, y };
+
+            checkWin();
+        }
+
+        function checkWin() {
             const pixels = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
             let clear = 0;
             for (let i = 3; i < pixels.length; i += 4) { if (pixels[i] === 0) clear++; }
@@ -98,8 +114,16 @@
             }
         }
 
-        // Enhanced touch handling to ensure scratch works on all mobile devices
+        function handleStart(e) {
+            isDrawing = true;
+            const r = canvas.getBoundingClientRect();
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            lastPoint = { x: clientX - r.left, y: clientY - r.top };
+        }
+
         function handleMove(e) {
+            if (!isDrawing) return;
             e.preventDefault();
             const r = canvas.getBoundingClientRect();
             const clientX = e.touches ? e.touches[0].clientX : e.clientX;
@@ -107,11 +131,16 @@
             scratch(clientX - r.left, clientY - r.top);
         }
 
-        canvas.addEventListener('touchstart', (e) => handleMove(e));
-        canvas.addEventListener('touchmove', (e) => handleMove(e), { passive: false });
-        canvas.addEventListener('mousemove', (e) => {
-            if (e.buttons === 1) handleMove(e);
-        });
+        canvas.addEventListener('mousedown', handleStart);
+        canvas.addEventListener('touchstart', (e) => { handleStart(e); handleMove(e); });
+        
+        window.addEventListener('mousemove', handleMove);
+        window.addEventListener('touchmove', handleMove, { passive: false });
+        
+        window.addEventListener('mouseup', () => { isDrawing = false; lastPoint = null; });
+        window.addEventListener('touchend', () => { isDrawing = false; lastPoint = null; });
+
+        igLink.href = "https://ig.me/m/theponychicago?text=I%20WON%20WINGS!%20🐏";
     </script>
 </body>
 </html>
