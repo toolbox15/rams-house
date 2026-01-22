@@ -24,14 +24,14 @@
             justify-content: center;
         }
 
+        /* MOVED ABOVE BUTTON: Adjusted margin-top to clear the bottom UI */
         .scratch-box { 
             position: relative; 
             width: 68%; 
             aspect-ratio: 1 / 1;
-            margin-top: 55%; 
+            margin-top: 45%; /* Pulls it up significantly to sit above the button area */
             background-color: transparent;
             z-index: 20; 
-            /* Shadow for the 20px Z-axis lift effect */
             filter: drop-shadow(0 20px 25px rgba(0,0,0,0.9));
         }
 
@@ -93,26 +93,23 @@
                 let drawWidth, drawHeight, xOffset, yOffset;
 
                 if (imgRatio > canvasRatio) {
-                    drawWidth = canvas.width - 4; // Leave room for border
+                    drawWidth = canvas.width - 6; 
                     drawHeight = drawWidth / imgRatio;
                 } else {
-                    drawHeight = canvas.height - 4; // Leave room for border
+                    drawHeight = canvas.height - 6; 
                     drawWidth = drawHeight * imgRatio;
                 }
 
                 xOffset = (canvas.width - drawWidth) / 2;
-                // Move the cover up by 5 pixels
-                yOffset = ((canvas.height - drawHeight) / 2) - 5; 
+                yOffset = ((canvas.height - drawHeight) / 2) - 5; // Lift artwork 5px
 
                 ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-                // --- DRAWING THE 2PX WHITE BORDER AROUND THE COVER RATIO ---
+                // --- 2PX WHITE BORDER WRAP ---
                 ctx.strokeStyle = "#ffffff";
                 ctx.lineWidth = 2;
-                // Stroke is drawn centered on the line, so we adjust slightly
                 ctx.strokeRect(xOffset - 1, yOffset - 1, drawWidth + 2, drawHeight + 2);
 
-                // --- DRAWING THE IMAGE ---
                 ctx.drawImage(coverImg, xOffset, yOffset, drawWidth, drawHeight);
             };
         }
