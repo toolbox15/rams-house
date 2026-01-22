@@ -6,60 +6,48 @@
     <title>Rams Champions Edition</title>
     <style>
         body, html {
-            margin: 0;
-            padding: 0;
-            width: 100%;
-            height: 100%;
-            background-color: #000; /* Deep black outside the card */
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            overflow: hidden;
+            margin: 0; padding: 0; width: 100%; height: 100%;
+            background-color: #000;
+            display: flex; align-items: center; justify-content: center;
+            overflow: hidden; touch-action: none;
         }
 
-        /* 1. Shrink the main card to only be as big as the stadium art */
+        /* The Card wraps the stadium background art */
         .game-card {
             position: relative;
-            width: 80vw; /* Shrunk width */
-            max-width: 320px; /* Compact mobile size */
-            aspect-ratio: 3 / 5; /* Matches your tall background.jpg shape */
+            width: 95vw;
+            max-width: 400px;
+            aspect-ratio: 1 / 1.77; /* Standard phone aspect ratio */
             background: url('./background.jpg') no-repeat center center;
-            background-size: contain; /* Shrinks stadium to fit tightly */
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
+            background-size: contain;
+            display: flex; justify-content: center;
         }
 
-        /* 2. Wrap the scratcher tightly inside the gold frame */
-        .scratch-wrap { 
+        /* 1. MOVED DOWN: Adjusted margin-top to align scratcher with the gold frame */
+        .scratch-container { 
             position: relative; 
-            width: 70%; /* Smaller internal width */
+            width: 76%; 
             aspect-ratio: 1 / 1;
-            margin-top: 10px; /* Fine-tuned alignment */
+            margin-top: 52%; /* Lowered to fit the frame in your artwork */
             background-color: #000;
             border-radius: 4px;
         }
 
         #prize { 
             width: 100%; height: 100%; 
-            background-size: cover; 
-            background-repeat: no-repeat; 
-            background-position: center; 
+            background-size: contain; background-repeat: no-repeat; background-position: center; 
         }
 
         #scratch-canvas { 
-            position: absolute; 
-            top: 0; left: 0; z-index: 2; 
-            width: 100%; height: 100%;
-            touch-action: none;
+            position: absolute; top: 0; left: 0; z-index: 2; 
+            width: 100%; height: 100%; touch-action: none;
         }
     </style>
 </head>
 <body>
 
     <div class="game-card">
-        <div class="scratch-wrap">
+        <div class="scratch-container">
             <a id="ig-link" href="#" target="_blank" style="position:absolute; top:0; left:0; width:100%; height:100%; z-index:1; pointer-events:none;">
                 <div id="prize"></div>
             </a>
@@ -71,7 +59,11 @@
         const canvas = document.getElementById('scratch-canvas');
         const ctx = canvas.getContext('2d');
         const prizeDiv = document.getElementById('prize');
+        const igLink = document.getElementById('ig-link');
+
+        const BAR_HANDLE = "theponychicago"; 
         
+        // --- 2. FIXED SCRATCH FUNCTIONALITY ---
         function init() {
             const rect = canvas.parentNode.getBoundingClientRect();
             canvas.width = rect.width;
@@ -84,31 +76,42 @@
             };
         }
 
-        // Set the prize image from your root folder
-        prizeDiv.style.backgroundImage = "url('./jackpot_prize.gif')";
+        // Using available images since no jackpot file exists
+        prizeDiv.style.backgroundImage = "url('./wings_on.png')";
+        igLink.href = `https://ig.me/m/${BAR_HANDLE}?text=I%20WON!%20🐏`;
 
-        init();
+        window.onload = init;
 
         function scratch(x, y) {
             ctx.globalCompositeOperation = 'destination-out';
             ctx.beginPath(); 
-            ctx.arc(x, y, 20, 0, Math.PI * 2); 
+            ctx.arc(x, y, 25, 0, Math.PI * 2); 
             ctx.fill();
             
+            // Percentage check
             const pixels = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
             let clear = 0;
             for (let i = 3; i < pixels.length; i += 4) { if (pixels[i] === 0) clear++; }
             if ((clear / (canvas.width * canvas.height)) > 0.6) {
                 canvas.style.opacity = '0';
-                document.getElementById('ig-link').style.pointerEvents = 'auto';
+                igLink.style.pointerEvents = 'auto';
             }
         }
 
-        canvas.addEventListener('touchmove', (e) => {
+        // Enhanced touch handling to ensure scratch works on all mobile devices
+        function handleMove(e) {
             e.preventDefault();
             const r = canvas.getBoundingClientRect();
-            scratch(e.touches[0].clientX - r.left, e.touches[0].clientY - r.top);
-        }, { passive: false });
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            scratch(clientX - r.left, clientY - r.top);
+        }
+
+        canvas.addEventListener('touchstart', (e) => handleMove(e));
+        canvas.addEventListener('touchmove', (e) => handleMove(e), { passive: false });
+        canvas.addEventListener('mousemove', (e) => {
+            if (e.buttons === 1) handleMove(e);
+        });
     </script>
 </body>
 </html>
