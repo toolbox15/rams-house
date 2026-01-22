@@ -24,14 +24,21 @@
             justify-content: center;
         }
 
-        /* MOVED ABOVE BUTTON: Adjusted margin-top to clear the bottom UI */
+        /* 1. POSITIONED ABOVE BUTTON: The container now handles the permanent border */
         .scratch-box { 
             position: relative; 
             width: 68%; 
             aspect-ratio: 1 / 1;
-            margin-top: 45%; /* Pulls it up significantly to sit above the button area */
+            margin-top: 38%; /* Adjusted to sit higher up above the button */
             background-color: transparent;
             z-index: 20; 
+            
+            /* The PERMANENT WHITE BORDER */
+            border: 2px solid #ffffff;
+            box-sizing: border-box;
+            border-radius: 4px;
+
+            /* Z-axis lift shadow */
             filter: drop-shadow(0 20px 25px rgba(0,0,0,0.9));
         }
 
@@ -57,6 +64,8 @@
         #scratch-canvas { 
             position: absolute; top: 0; left: 0; z-index: 2; 
             width: 100%; height: 100%; touch-action: none;
+            /* Shifting the drawing up 5px internally to match your request */
+            transform: translateY(-5px);
         }
     </style>
 </head>
@@ -93,23 +102,17 @@
                 let drawWidth, drawHeight, xOffset, yOffset;
 
                 if (imgRatio > canvasRatio) {
-                    drawWidth = canvas.width - 6; 
+                    drawWidth = canvas.width; 
                     drawHeight = drawWidth / imgRatio;
                 } else {
-                    drawHeight = canvas.height - 6; 
+                    drawHeight = canvas.height; 
                     drawWidth = drawHeight * imgRatio;
                 }
 
                 xOffset = (canvas.width - drawWidth) / 2;
-                yOffset = ((canvas.height - drawHeight) / 2) - 5; // Lift artwork 5px
+                yOffset = (canvas.height - drawHeight) / 2;
 
                 ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-                // --- 2PX WHITE BORDER WRAP ---
-                ctx.strokeStyle = "#ffffff";
-                ctx.lineWidth = 2;
-                ctx.strokeRect(xOffset - 1, yOffset - 1, drawWidth + 2, drawHeight + 2);
-
                 ctx.drawImage(coverImg, xOffset, yOffset, drawWidth, drawHeight);
             };
         }
