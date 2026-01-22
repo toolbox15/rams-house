@@ -12,83 +12,72 @@
             overflow: hidden; touch-action: none;
         }
 
-        /* 1. Perspective Fix: Standard Mobile Aspect Ratio */
-        .game-card {
+        .game-wrapper {
             position: relative;
             width: 100vw;
-            height: 177.7vw; 
+            height: 177.7vw; /* Perfect 9:16 mobile ratio */
             max-width: 430px; 
             max-height: 764px;
-            background: url('./background.jpg') no-repeat center center;
-            background-size: cover;
-            display: flex;
-            justify-content: center;
-        }
-
-        .scratch-container { 
-            position: relative; 
-            width: 78%; 
-            aspect-ratio: 1 / 1;
-            margin-top: 55%; 
-            background-color: #050505;
-            border-radius: 5px;
             overflow: hidden;
         }
 
-        /* 2. Neon Flicker Animation */
-        @keyframes neonPowerOn {
-            0% { opacity: 0.1; filter: brightness(1); }
-            10% { opacity: 1; filter: brightness(2) drop-shadow(0 0 5px #FFD100); }
-            15% { opacity: 0.3; }
-            20% { opacity: 1; filter: brightness(2) drop-shadow(0 0 10px #FFD100); }
-            25% { opacity: 0.2; }
-            30% { opacity: 1; filter: brightness(1.5) drop-shadow(0 0 20px #FFD100); }
-            100% { opacity: 1; filter: brightness(1.2) drop-shadow(0 0 15px #FFD100); }
-        }
-
-        .prize-glow {
-            animation: neonPowerOn 0.6s ease-out forwards;
-        }
-
-        #prize { 
+        /* Bottom layer: The Stadium Background + The Prize */
+        #prize-layer { 
+            position: absolute;
+            top: 0; left: 0;
             width: 100%; height: 100%; 
-            background-image: url('./wings_on.png');
-            background-size: contain; 
-            background-repeat: no-repeat; 
-            background-position: center; 
-            opacity: 0; /* Hidden until reveal */
+            background: url('./background.jpg') no-repeat center center;
+            background-size: cover;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1;
         }
 
-        #scratch-canvas { 
-            position: absolute; top: 0; left: 0; z-index: 2; 
-            width: 100%; height: 100%; touch-action: none;
+        .prize-image {
+            width: 75%;
+            opacity: 0;
+            filter: drop-shadow(0 0 10px #FFD100);
+            transition: opacity 0.5s ease-in;
         }
+
+        /* Top layer: The Scratchable Cover */
+        #scratch-canvas { 
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%; 
+            z-index: 2;
+            touch-action: none;
+        }
+
+        /* Neon Reveal Animation */
+        @keyframes neonFlicker {
+            0% { filter: brightness(1) drop-shadow(0 0 5px #FFD100); }
+            100% { filter: brightness(1.3) drop-shadow(0 0 25px #FFD100); }
+        }
+        .reveal-active { opacity: 1 !important; animation: neonFlicker 0.1s infinite alternate; }
     </style>
 </head>
 <body>
 
-    <div class="game-card">
-        <div class="scratch-container">
-            <a id="ig-link" href="#" target="_blank" style="position:absolute; top:0; left:0; width:100%; height:100%; z-index:1; pointer-events:none;">
-                <div id="prize"></div>
-            </a>
-            <canvas id="scratch-canvas"></canvas>
+    <div class="game-wrapper">
+        <div id="prize-layer">
+            <img src="./wings_on.png" id="prize-img" class="prize-image">
         </div>
+        <canvas id="scratch-canvas"></canvas>
     </div>
 
     <script>
         const canvas = document.getElementById('scratch-canvas');
         const ctx = canvas.getContext('2d');
-        const prizeDiv = document.getElementById('prize');
-        const igLink = document.getElementById('ig-link');
-
+        const prizeImg = document.getElementById('prize-img');
+        
         let isDrawing = false;
         let lastPoint = null;
 
         function init() {
-            const rect = canvas.parentNode.getBoundingClientRect();
-            canvas.width = rect.width;
-            canvas.height = rect.height;
+            canvas.width = canvas.offsetWidth;
+            canvas.height = canvas.offsetHeight;
             
             const coverImg = new Image();
             coverImg.src = './rams-cover.jpg'; 
@@ -99,12 +88,17 @@
 
         window.onload = init;
 
-        // 3. Wide Brush Logic
         function scratch(x, y) {
             ctx.globalCompositeOperation = 'destination-out';
-            ctx.lineJoin = 'round';
-            ctx.lineCap = 'round';
-            ctx.lineWidth = 55; // Wide Scraping Brush
+            
+            // --- WIDE PAINT BRUSH EFFECT ---
+            ctx.lineWidth = 80; // Extra wide for the scraping look
+            ctx.lineCap = 'butt'; // Square ends make it look more like a flat scraper
+            ctx.lineJoin = 'bevel';
+            
+            // Add a slight "grain" effect to the brush
+            ctx.shadowBlur = 5;
+            ctx.shadowColor = 'black';
 
             ctx.beginPath();
             if (lastPoint) {
@@ -117,25 +111,24 @@
             ctx.stroke();
             lastPoint = { x, y };
 
-            checkWin();
+            checkReveal();
         }
 
-        function checkWin() {
+        function checkReveal() {
             const pixels = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
             let clear = 0;
-            for (let i = 3; i < pixels.length; i += 4) { if (pixels[i] === 0) clear++; }
+            // Sampling pixels for performance
+            for (let i = 3; i < pixels.length; i += 16) { if (pixels[i] === 0) clear++; }
             
-            if ((clear / (canvas.width * canvas.height)) > 0.5) {
-                // Reveal Prize with Animation
+            // Reveal once 40% of the screen area is cleared
+            if ((clear / (pixels.length / 16)) > 0.4) {
+                prizeImg.classList.add('reveal-active');
                 canvas.style.opacity = '0';
                 canvas.style.pointerEvents = 'none';
-                prizeDiv.style.opacity = '1';
-                prizeDiv.classList.add('prize-glow');
-                igLink.style.pointerEvents = 'auto';
             }
         }
 
-        // Input Handlers
+        // Handle Touch & Mouse
         function handleStart(e) {
             isDrawing = true;
             const r = canvas.getBoundingClientRect();
@@ -159,8 +152,6 @@
         window.addEventListener('touchmove', handleMove, { passive: false });
         window.addEventListener('mouseup', () => { isDrawing = false; lastPoint = null; });
         window.addEventListener('touchend', () => { isDrawing = false; lastPoint = null; });
-
-        igLink.href = "https://ig.me/m/theponychicago?text=I%20WON%20WINGS!%20🐏";
     </script>
 </body>
 </html>
