@@ -23,7 +23,6 @@
             height: 177.7vw; 
             max-width: 430px; 
             max-height: 764px;
-            /* Blue tint overlay to support the theme */
             background: linear-gradient(rgba(0, 53, 148, 0.3), rgba(0, 53, 148, 0.3)), 
                         url('./background.jpg') no-repeat center center;
             background-size: contain;
@@ -31,11 +30,14 @@
             justify-content: center;
         }
 
+        /* 1. PREVENT SPOILERS: Hidden until coverImg.onload */
         .scratch-outer-wrap {
             position: relative;
             width: 70%;
             margin-top: 56%; 
             z-index: 10;
+            opacity: 0; 
+            transition: opacity 0.5s ease;
         }
 
         .scratch-box { 
@@ -43,12 +45,10 @@
             width: 100%;
             background: #050505 url('./wings_on.gif') no-repeat center center;
             background-size: contain;
-            /* RAMS THEME COLORS */
             border: 4px solid var(--rams-gold); 
             border-radius: 8px;
             overflow: hidden;
             box-sizing: border-box;
-            box-shadow: 0 0 20px rgba(255, 209, 0, 0.5), 0 10px 30px rgba(0,0,0,0.8);
         }
 
         #flicker-layer {
@@ -76,12 +76,23 @@
             touch-action: none;
         }
 
-        #ig-link {
+        /* 2. CLAIM BUTTON: Sits on top, hidden until win */
+        #claim-btn {
             position: absolute;
-            top: 0; left: 0;
-            width: 100%; height: 100%;
-            z-index: 20;
-            pointer-events: none;
+            bottom: 10%;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: var(--rams-gold);
+            color: var(--rams-blue);
+            padding: 12px 24px;
+            font-weight: bold;
+            text-decoration: none;
+            border-radius: 50px;
+            z-index: 30;
+            display: none; /* Hidden until reveal */
+            box-shadow: 0 0 15px var(--rams-gold);
+            text-transform: uppercase;
+            font-family: sans-serif;
         }
     </style>
 </head>
@@ -91,9 +102,9 @@
         <div class="scratch-outer-wrap" id="main-wrap">
             <div class="scratch-box" id="dynamic-box">
                 <div id="flicker-layer"></div>
-                <a id="ig-link" href="#" target="_blank"></a>
                 <canvas id="scratch-canvas"></canvas>
             </div>
+            <a id="claim-btn" href="#">Claim Your Prize!</a>
         </div>
     </div>
 
@@ -102,7 +113,7 @@
         const canvas = document.getElementById('scratch-canvas');
         const ctx = canvas.getContext('2d');
         const wrap = document.getElementById('main-wrap');
-        const igLink = document.getElementById('ig-link');
+        const claimBtn = document.getElementById('claim-btn');
         const box = document.getElementById('dynamic-box');
 
         let isDrawing = false;
@@ -123,13 +134,15 @@
 
                 ctx.globalCompositeOperation = 'source-over';
                 ctx.drawImage(coverImg, 0, 0, canvas.width, canvas.height);
+                
+                // SHOW WRAPPER ONLY AFTER COVER IS READY
+                wrap.style.opacity = "1";
             };
         }
 
         window.onload = init;
 
-        // Set the link with the winner message
-        igLink.href = `https://ig.me/m/${BAR_HANDLE}?text=I%20WON%20WINGS!%20🐏`;
+        claimBtn.href = `https://ig.me/m/${BAR_HANDLE}?text=I%20WON%20WINGS!%20🐏`;
 
         function scratch(x, y) {
             ctx.globalCompositeOperation = 'destination-out';
@@ -157,7 +170,7 @@
                 canvas.style.opacity = '0';
                 canvas.style.pointerEvents = 'none';
                 wrap.classList.add('revealed');
-                igLink.style.pointerEvents = 'auto';
+                claimBtn.style.display = "block"; // SHOW THE BUTTON
             }
         }
 
