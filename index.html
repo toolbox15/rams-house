@@ -6,7 +6,6 @@
     <title>Rams Game Day</title>
     <style>
         :root {
-            --rams-blue: #003594;
             --rams-gold: #FFD100;
         }
 
@@ -23,14 +22,13 @@
             height: 177.7vw; 
             max-width: 430px; 
             max-height: 764px;
-            background: linear-gradient(rgba(0, 53, 148, 0.3), rgba(0, 53, 148, 0.3)), 
-                        url('./background.jpg') no-repeat center center;
+            /* Blue tint removed - original background restored */
+            background: url('./background.jpg') no-repeat center center;
             background-size: contain;
             display: flex;
             justify-content: center;
         }
 
-        /* 1. PREVENT SPOILERS: Hidden until coverImg.onload */
         .scratch-outer-wrap {
             position: relative;
             width: 70%;
@@ -38,6 +36,7 @@
             z-index: 10;
             opacity: 0; 
             transition: opacity 0.5s ease;
+            text-align: center; /* Centers the custom button below box */
         }
 
         .scratch-box { 
@@ -49,6 +48,7 @@
             border-radius: 8px;
             overflow: hidden;
             box-sizing: border-box;
+            margin-bottom: 20px; /* Space for the button */
         }
 
         #flicker-layer {
@@ -76,23 +76,18 @@
             touch-action: none;
         }
 
-        /* 2. CLAIM BUTTON: Sits on top, hidden until win */
-        #claim-btn {
-            position: absolute;
-            bottom: 10%;
-            left: 50%;
-            transform: translateX(-50%);
-            background-color: var(--rams-gold);
-            color: var(--rams-blue);
-            padding: 12px 24px;
-            font-weight: bold;
-            text-decoration: none;
-            border-radius: 50px;
-            z-index: 30;
-            display: none; /* Hidden until reveal */
-            box-shadow: 0 0 15px var(--rams-gold);
-            text-transform: uppercase;
-            font-family: sans-serif;
+        /* CUSTOM PNG BUTTON */
+        #prize-button-img {
+            width: 80%; /* Adjust size as needed */
+            cursor: pointer;
+            display: none; /* Hidden until win */
+            margin: 0 auto;
+            filter: drop-shadow(0 5px 15px rgba(0,0,0,0.5));
+            transition: transform 0.2s active;
+        }
+
+        #prize-button-img:active {
+            transform: scale(0.95);
         }
     </style>
 </head>
@@ -104,7 +99,10 @@
                 <div id="flicker-layer"></div>
                 <canvas id="scratch-canvas"></canvas>
             </div>
-            <a id="claim-btn" href="#">Claim Your Prize!</a>
+
+            <a id="claim-link" href="#" target="_blank">
+                <img src="./prize-button.png" id="prize-button-img" alt="Claim Prize">
+            </a>
         </div>
     </div>
 
@@ -113,7 +111,8 @@
         const canvas = document.getElementById('scratch-canvas');
         const ctx = canvas.getContext('2d');
         const wrap = document.getElementById('main-wrap');
-        const claimBtn = document.getElementById('claim-btn');
+        const prizeBtn = document.getElementById('prize-button-img');
+        const claimLink = document.getElementById('claim-link');
         const box = document.getElementById('dynamic-box');
 
         let isDrawing = false;
@@ -134,15 +133,13 @@
 
                 ctx.globalCompositeOperation = 'source-over';
                 ctx.drawImage(coverImg, 0, 0, canvas.width, canvas.height);
-                
-                // SHOW WRAPPER ONLY AFTER COVER IS READY
                 wrap.style.opacity = "1";
             };
         }
 
         window.onload = init;
 
-        claimBtn.href = `https://ig.me/m/${BAR_HANDLE}?text=I%20WON%20WINGS!%20🐏`;
+        claimLink.href = `https://ig.me/m/${BAR_HANDLE}?text=I%20WON%20WINGS!%20🐏`;
 
         function scratch(x, y) {
             ctx.globalCompositeOperation = 'destination-out';
@@ -170,7 +167,7 @@
                 canvas.style.opacity = '0';
                 canvas.style.pointerEvents = 'none';
                 wrap.classList.add('revealed');
-                claimBtn.style.display = "block"; // SHOW THE BUTTON
+                prizeBtn.style.display = "block"; // Shows your custom PNG
             }
         }
 
