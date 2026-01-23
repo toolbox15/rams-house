@@ -3,196 +3,148 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Rams Game Day</title>
+    <title>Rams Champions Edition</title>
     <style>
-        body, html {
-            margin: 0; padding: 0; width: 100%; height: 100%;
-            background-color: #000;
-            display: flex; align-items: center; justify-content: center;
-            overflow: hidden; touch-action: none;
+        :root {
+            --rams-blue: #003594;
+            --rams-gold: #FFD100;
         }
 
-        .game-wrapper {
-            position: relative;
-            width: 100vw;
-            height: 177.7vw; 
-            max-width: 430px; 
-            max-height: 764px;
-            background: url('./background.jpg') no-repeat center center;
-            background-size: contain;
+        body { 
+            /* Added a blue tint over the background to unify the theme */
+            background: linear-gradient(rgba(0, 53, 148, 0.4), rgba(0, 53, 148, 0.4)), 
+                        url('./background.jpg') no-repeat center center fixed; 
+            background-size: cover;
+            margin: 0; 
+            height: 100vh;
             display: flex;
+            align-items: center;
             justify-content: center;
-        }
-
-        .scratch-outer-wrap {
-            position: relative;
-            width: 70%;
-            margin-top: 56%; 
-            z-index: 10;
-            /* 1. HIDDEN BY DEFAULT: Prevent wings from showing early */
-            opacity: 0;
-            transition: opacity 0.3s ease-in;
-        }
-
-        .scratch-box { 
-            position: relative; 
-            width: 100%;
-            background: #050505 url('./wings_on.gif') no-repeat center center;
-            background-size: contain;
-            border: 4px solid #ffffff; 
-            border-radius: 6px;
             overflow: hidden;
-            box-sizing: border-box;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+            touch-action: none; 
         }
 
-        #flicker-layer {
-            position: absolute;
-            top: 0; left: 0;
-            width: 100%; height: 100%;
-            background: url('./wings_flicker.gif') no-repeat center center;
-            background-size: contain;
-            opacity: 0;
-            z-index: 1;
-        }
-
-        .revealed #flicker-layer {
-            animation: toggleFlicker 4s infinite;
-        }
-
-        @keyframes toggleFlicker {
-            0%, 90%, 100% { opacity: 0; }
-            92%, 96% { opacity: 1; }
-        }
-
-        #scratch-canvas { 
-            position: relative;
-            z-index: 5;
-            width: 100%;
-            display: block;
-            touch-action: none;
+        .container { 
+            position: relative; 
+            width: 580px; 
+            height: 580px; 
+            transform: scale(0.6); 
+            background-color: #050505;
+            /* RAMS GOLD BORDER & NEON GLOW */
+            border: 6px solid var(--rams-gold);
+            border-radius: 16px;
+            box-shadow: 0 0 30px rgba(255, 209, 0, 0.6), 0 20px 40px rgba(0,0,0,0.8);
+            overflow: hidden;
         }
 
         #ig-link {
             position: absolute;
-            top: 0; left: 0;
-            width: 100%; height: 100%;
-            z-index: 20;
-            pointer-events: none;
+            top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 1; pointer-events: none;
         }
-        
-        /* Loading indicator for the owner */
-        .loading-text {
-            position: absolute;
-            color: white;
-            font-family: sans-serif;
-            top: 60%;
+
+        #prize { 
+            width: 100%; height: 100%; 
+            background-size: contain; 
+            background-repeat: no-repeat; 
+            background-position: center; 
+            /* Prevents the 'spoilers' from showing through the gaps */
+            background-color: #000;
+        }
+
+        /* Revealed State Animation */
+        .revealed #prize {
+            animation: neonFlicker 0.6s ease-out forwards;
+        }
+
+        @keyframes neonFlicker {
+            0% { filter: brightness(0.5); }
+            50% { filter: brightness(1.5) drop-shadow(0 0 10px var(--rams-gold)); }
+            100% { filter: brightness(1) drop-shadow(0 0 20px var(--rams-gold)); }
+        }
+
+        #scratch-canvas { 
+            position: absolute; 
+            top: 0; left: 0; z-index: 2; 
+            cursor: crosshair;
+            transition: opacity 0.8s ease; 
         }
     </style>
 </head>
 <body>
 
-    <div class="game-wrapper">
-        <div class="scratch-outer-wrap" id="main-wrap">
-            <div class="scratch-box" id="dynamic-box">
-                <div id="flicker-layer"></div>
-                <a id="ig-link" href="https://ig.me/m/theponychicago?text=I%20WON%20WINGS!%20🐏" target="_blank"></a>
-                <canvas id="scratch-canvas"></canvas>
-            </div>
-        </div>
+    <div class="container" id="game-container">
+        <a id="ig-link" href="#" target="_blank">
+            <div id="prize"></div>
+        </a>
+        <canvas id="scratch-canvas" width="580" height="580"></canvas>
     </div>
 
     <script>
+        const BAR_HANDLE = "theponychicago"; 
+        
+        const PRIZE_POOL = [
+            { img: './wings_prize.gif', msg: 'FREE%20WINGS' },
+            { img: './jackpot_prize.gif', msg: 'GOLDEN%20RAM' }
+        ];
+
         const canvas = document.getElementById('scratch-canvas');
         const ctx = canvas.getContext('2d');
-        const wrap = document.getElementById('main-wrap');
+        const prizeDiv = document.getElementById('prize');
         const igLink = document.getElementById('ig-link');
-        const box = document.getElementById('dynamic-box');
-
+        const container = document.getElementById('game-container');
+        
         let isDrawing = false;
-        let lastPoint = null;
+        let isFinished = false;
 
-        function init() {
-            const coverImg = new Image();
-            coverImg.src = './rams-cover.png?v=' + new Date().getTime(); 
-            
-            coverImg.onload = () => {
-                const imgRatio = coverImg.width / coverImg.height;
-                const boxWidth = box.clientWidth; 
-                const targetHeight = boxWidth / imgRatio;
+        const picked = PRIZE_POOL[Math.floor(Math.random() * PRIZE_POOL.length)];
+        prizeDiv.style.backgroundImage = `url(${picked.img})`;
+        igLink.href = `https://ig.me/m/${BAR_HANDLE}?text=I%20WON%20${picked.msg}!%20🐏`;
 
-                box.style.height = targetHeight + "px";
-                canvas.width = boxWidth;
-                canvas.height = targetHeight;
-
-                ctx.globalCompositeOperation = 'source-over';
-                ctx.drawImage(coverImg, 0, 0, canvas.width, canvas.height);
-                
-                // 2. SHOW EVERYTHING ONLY AFTER COVER IS DRAWN
-                wrap.style.opacity = "1";
-            };
-
-            coverImg.onerror = () => {
-                console.error("Missing rams-cover.png");
-            };
-        }
-
-        window.onload = init;
+        const coverImg = new Image();
+        coverImg.src = './rams cover.jpg';  
+        coverImg.onload = () => {
+            ctx.drawImage(coverImg, 0, 0, 580, 580);
+        };
 
         function scratch(x, y) {
             ctx.globalCompositeOperation = 'destination-out';
-            ctx.lineJoin = 'round';
-            ctx.lineCap = 'butt'; 
-            ctx.lineWidth = 45; 
-
-            ctx.beginPath();
-            if (lastPoint) {
-                ctx.moveTo(lastPoint.x, lastPoint.y);
-                ctx.lineTo(x, y);
-            } else {
-                ctx.moveTo(x, y);
-            }
-            ctx.stroke();
-            lastPoint = { x, y };
-            checkWin();
-        }
-
-        function checkWin() {
-            const pixels = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
-            let clearCount = 0;
-            for (let i = 3; i < pixels.length; i += 16) { if (pixels[i] === 0) clearCount++; }
+            ctx.beginPath(); 
+            ctx.arc(x, y, 40, 0, Math.PI * 2); 
+            ctx.fill();
             
-            if ((clearCount / (pixels.length / 16)) > 0.60) {
+            const pixels = ctx.getImageData(0, 0, 580, 580).data;
+            let clear = 0;
+            for (let i = 3; i < pixels.length; i += 4) { if (pixels[i] === 0) clear++; }
+            if ((clear / (580 * 580)) > 0.6 && !isFinished) {
+                isFinished = true;
                 canvas.style.opacity = '0';
-                canvas.style.pointerEvents = 'none';
-                wrap.classList.add('revealed');
+                container.classList.add('revealed'); // Triggers the CSS flicker
                 igLink.style.pointerEvents = 'auto';
             }
         }
 
-        function getPos(e) {
+        canvas.addEventListener('mousemove', (e) => {
+            if (!isDrawing || isFinished) return;
             const r = canvas.getBoundingClientRect();
-            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-            return { x: clientX - r.left, y: clientY - r.top };
-        }
-
-        canvas.addEventListener('mousedown', (e) => { isDrawing = true; lastPoint = getPos(e); });
-        canvas.addEventListener('touchstart', (e) => { 
-            isDrawing = true; lastPoint = getPos(e); 
-            scratch(lastPoint.x, lastPoint.y); 
+            const scaleX = canvas.width / r.width;
+            const scaleY = canvas.height / r.height;
+            scratch((e.clientX - r.left) * scaleX, (e.clientY - r.top) * scaleY);
         });
 
-        window.addEventListener('mousemove', (e) => { if (isDrawing) scratch(getPos(e).x, getPos(e).y); });
-        window.addEventListener('touchmove', (e) => {
-            if (!isDrawing) return;
+        canvas.addEventListener('touchmove', (e) => {
+            if (isFinished) return;
             e.preventDefault();
-            const p = getPos(e);
-            scratch(p.x, p.y);
+            const r = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / r.width;
+            const scaleY = canvas.height / r.height;
+            scratch((e.touches[0].clientX - r.left) * scaleX, (e.touches[0].clientY - r.top) * scaleY);
         }, { passive: false });
 
-        window.addEventListener('mouseup', () => { isDrawing = false; lastPoint = null; });
-        window.addEventListener('touchend', () => { isDrawing = false; lastPoint = null; });
+        canvas.addEventListener('mousedown', () => isDrawing = true);
+        window.addEventListener('mouseup', () => isDrawing = false);
+        canvas.addEventListener('touchstart', () => isDrawing = true);
+        canvas.addEventListener('touchend', () => isDrawing = false);
     </script>
 </body>
 </html>
